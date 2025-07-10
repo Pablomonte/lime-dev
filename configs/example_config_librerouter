@@ -1,0 +1,48 @@
+# Example LibreRouterOS Configuration for LibreRouter v1
+# This file shows the essential configuration options for LibreRouter hardware
+# Copy and modify for your specific needs
+
+CONFIG_TARGET_ath79=y
+CONFIG_TARGET_ath79_generic=y
+CONFIG_TARGET_ath79_generic_DEVICE_librerouter_librerouter-v1=y
+
+# LibreMesh core packages
+CONFIG_PACKAGE_lime-full=y
+CONFIG_PACKAGE_lime-basic=y
+CONFIG_PACKAGE_lime-complete=y
+
+# LibreRouter hardware support
+CONFIG_PACKAGE_librerouter-hw=y
+CONFIG_PACKAGE_librerouter-led=y
+
+# Essential packages
+CONFIG_PACKAGE_deferrable-reboot=y
+CONFIG_PACKAGE_check-date-http=y
+CONFIG_PACKAGE_eupgrade=y
+
+# Build options
+CONFIG_BUILD_LOG=y
+CONFIG_KERNEL_BUILD_DOMAIN="librerouteros"
+
+# Hardware-specific options
+CONFIG_ATH79_DFS=y
+CONFIG_PACKAGE_kmod-ath9k=y
+CONFIG_PACKAGE_kmod-ath10k=y
+
+# Network configuration
+CONFIG_PACKAGE_lime-defaults=y
+CONFIG_PACKAGE_lime-map-agent=y
+
+# Web interface
+CONFIG_PACKAGE_lime-app=y
+CONFIG_PACKAGE_luci=y
+CONFIG_PACKAGE_luci-app-lime=y
+
+# Mesh protocols
+CONFIG_PACKAGE_lime-proto-anygw=y
+CONFIG_PACKAGE_lime-proto-batadv=y
+CONFIG_PACKAGE_lime-proto-bmx6=y
+
+# Wireless drivers
+CONFIG_PACKAGE_ath9k-htc-firmware=y
+CONFIG_PACKAGE_ath10k-firmware-qca988x=y

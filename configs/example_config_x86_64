@@ -1,0 +1,42 @@
+# Example LibreRouterOS Configuration for x86_64
+# This file shows the essential configuration options for x86_64 builds
+# Copy and modify for your specific needs
+
+CONFIG_TARGET_x86=y
+CONFIG_TARGET_x86_64=y
+CONFIG_TARGET_x86_64_DEVICE_generic=y
+
+# LibreMesh core packages
+CONFIG_PACKAGE_lime-full=y
+CONFIG_PACKAGE_lime-basic=y
+CONFIG_PACKAGE_lime-complete=y
+
+# LibreRouter hardware support
+CONFIG_PACKAGE_librerouter-hw=y
+
+# Essential packages
+CONFIG_PACKAGE_deferrable-reboot=y
+CONFIG_PACKAGE_check-date-http=y
+CONFIG_PACKAGE_eupgrade=y
+
+# Build options
+CONFIG_BUILD_LOG=y
+CONFIG_KERNEL_BUILD_DOMAIN="librerouteros"
+
+# Image options
+CONFIG_TARGET_KERNEL_PARTSIZE=32
+CONFIG_TARGET_ROOTFS_PARTSIZE=512
+
+# Network configuration
+CONFIG_PACKAGE_lime-defaults=y
+CONFIG_PACKAGE_lime-map-agent=y
+
+# Web interface
+CONFIG_PACKAGE_lime-app=y
+CONFIG_PACKAGE_luci=y
+CONFIG_PACKAGE_luci-app-lime=y
+
+# Mesh protocols
+CONFIG_PACKAGE_lime-proto-anygw=y
+CONFIG_PACKAGE_lime-proto-batadv=y
+CONFIG_PACKAGE_lime-proto-bmx6=y

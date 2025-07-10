@@ -1,0 +1,122 @@
+# LibreRouterOS Build Environment - Git Ignore Rules
+
+# Build Logs and Output
+*.log
+docker-build*.log
+build.log
+lime-build.log
+
+# Docker Build Context (temporary)
+build_context/
+tmp/
+
+# Downloaded Dependencies and Cache
+cache/
+dl/
+downloads/
+
+# Build Artifacts
+bin/
+build_dir/
+staging_dir/
+toolchain/
+logs/
+
+# Temporary Build Files
+.config
+.config.old
+tmp/
+.tmp/
+
+# Docker Volumes and Mounts
+output/
+workspace/
+
+# OS Generated Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE and Editor Files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.vim/
+
+# Backup Files
+*.bak
+*.backup
+*.orig
+
+# Environment Variables (if any secrets)
+.env
+.env.local
+.env.*.local
+
+# Test Results and Coverage
+test-results/
+coverage/
+
+# Node.js (if any web interfaces added)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Python Cache (for any Python scripts)
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.env
+.venv
+
+# Local Configuration Overrides
+local.conf
+local.config
+*.local
+
+# SSH Keys and Certificates (safety)
+*.pem
+*.key
+*.crt
+id_rsa*
+id_ed25519*
+
+# Docker Generated Files (keep Dockerfiles)
+.dockerignore
+
+# Build System Generated
+feeds/
+feeds.conf
+package/feeds/
+
+# Target Repository Content (when used as working directory)
+target/
+package/
+include/
+scripts/
+tools/
+Makefile
+rules.mk
+BSDmakefile
+Config.in
+feeds.conf.default
+
+# Keep Essential Files
+!README.md
+!CLAUDE.md
+!*.sh
+!Dockerfile*
+!docker-compose.yml
+!docs/
+!configs/
