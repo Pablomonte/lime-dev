@@ -34,7 +34,7 @@ check_directory() {
     fi
 }
 
-# Update a specific repository
+# Update a specific repository with smart remote tracking
 update_repo() {
     local repo_name="$1"
     local default_branch="$2"
@@ -48,7 +48,7 @@ update_repo() {
     print_info "Updating $repo_name..."
     cd "$repo_path"
     
-    # Get current branch
+    # Get current branch and tracking info
     current_branch=$(git branch --show-current 2>/dev/null || git rev-parse --abbrev-ref HEAD)
     
     # Fetch all remotes
@@ -59,22 +59,46 @@ update_repo() {
     if [[ "$current_branch" == "HEAD" ]] || git rev-parse --verify HEAD >/dev/null 2>&1 && ! git symbolic-ref HEAD >/dev/null 2>&1; then
         print_info "  Repository is on detached HEAD (likely a tag), skipping pull"
     else
-        # Pull from current branch or default
-        local branch_to_pull="${current_branch:-$default_branch}"
-        print_info "  Pulling from origin/$branch_to_pull..."
+        # Get the current tracking branch info
+        local tracking_info=$(git status -b --porcelain=v1 2>/dev/null | head -1)
+        local upstream_remote=""
+        local upstream_branch=""
         
-        if git show-ref --verify --quiet "refs/remotes/origin/$branch_to_pull"; then
-            git pull origin "$branch_to_pull"
-            print_success "  $repo_name updated successfully"
+        # Parse tracking info to get remote and branch
+        if [[ "$tracking_info" =~ \[([^/]+)/([^\]]+) ]]; then
+            upstream_remote="${BASH_REMATCH[1]}"
+            upstream_branch="${BASH_REMATCH[2]}"
+        fi
+        
+        # Determine what to pull from
+        if [[ -n "$upstream_remote" && -n "$upstream_branch" ]]; then
+            # Current branch has upstream tracking - use it
+            print_info "  Pulling from tracked upstream: $upstream_remote/$upstream_branch..."
+            if git show-ref --verify --quiet "refs/remotes/$upstream_remote/$upstream_branch"; then
+                git pull "$upstream_remote" "$upstream_branch"
+                print_success "  $repo_name updated from $upstream_remote/$upstream_branch"
+            else
+                print_error "  Tracked upstream $upstream_remote/$upstream_branch not found"
+            fi
         else
-            print_error "  Branch origin/$branch_to_pull not found, skipping pull"
+            # No upstream tracking, try origin with current or default branch
+            local branch_to_pull="${current_branch:-$default_branch}"
+            print_info "  No upstream tracking found, trying origin/$branch_to_pull..."
+            
+            if git show-ref --verify --quiet "refs/remotes/origin/$branch_to_pull"; then
+                git pull origin "$branch_to_pull"
+                print_success "  $repo_name updated from origin/$branch_to_pull"
+            else
+                print_error "  Branch origin/$branch_to_pull not found, skipping pull"
+            fi
         fi
     fi
     
-    # Show current status
+    # Show current status with tracking info
     local current_commit=$(git rev-parse --short HEAD)
     local current_ref=$(git describe --tags --exact-match 2>/dev/null || git branch --show-current 2>/dev/null || echo "detached")
-    print_info "  Current: $current_ref ($current_commit)"
+    local tracking_status=$(git status -b --porcelain=v1 2>/dev/null | head -1 | grep -o '\[.*\]' || echo "")
+    print_info "  Current: $current_ref ($current_commit) $tracking_status"
     
     cd "$WORK_DIR"
 }
@@ -83,11 +107,12 @@ update_repo() {
 update_all_repos() {
     print_info "Updating all repositories in repos/ directory..."
     
-    # Update each repository with its appropriate default branch
+    # Update each repository - now respects current branch tracking
+    # Default branches provided as fallback only
     update_repo "lime-app" "master"
     update_repo "lime-packages" "master" 
-    update_repo "librerouteros" "librerouter-1.5"
-    update_repo "kconfig-utils" "master"
+    update_repo "librerouteros" "main"
+    update_repo "kconfig-utils" "main"
     
     # Special handling for OpenWrt (tagged version)
     if [[ -d "$REPOS_DIR/openwrt" ]]; then

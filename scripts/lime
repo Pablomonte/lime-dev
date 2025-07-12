@@ -1,0 +1,111 @@
+#!/usr/bin/env bash
+#
+# Lime-Build - Main Command Interface
+# Unified entry point for all lime-build operations
+#
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+print_info() {
+    echo "[INFO] $1"
+}
+
+print_error() {
+    echo "[ERROR] $1" >&2
+}
+
+usage() {
+    cat << EOF
+Lime-Build - LibreMesh Development Environment
+
+Usage: $0 <command> [options]
+
+Main Commands:
+    setup           Setup and configure development environment
+    build           Build LibreRouterOS firmware
+    check           Check environment status
+    update          Update repositories
+    clean           Clean build artifacts
+
+Setup Commands:
+    lime setup check                    # Check current status
+    lime setup install                  # Safe interactive setup  
+    lime setup install --release        # Setup for release testing
+    lime setup update                   # Update repositories only
+
+Build Commands:
+    lime build                          # Native build (default target)
+    lime build docker librerouter-v1    # Docker build 
+    lime build native --download-only   # Download dependencies only
+    lime build --clean                  # Clean build environment
+
+Examples:
+    lime setup check                    # Check if environment is ready
+    lime setup install                  # Initial setup
+    lime build                          # Build firmware
+    lime build docker --shell           # Open Docker shell
+    lime update                         # Update all repositories
+    lime clean                          # Clean everything
+
+Directory Structure:
+    scripts/
+    ├── lime                    # This script (main interface)
+    ├── setup.sh               # Setup management
+    ├── build.sh               # Build management  
+    ├── core/                  # Core functionality
+    │   ├── check-setup.sh
+    │   ├── docker-build.sh
+    │   ├── librerouteros-wrapper.sh
+    │   └── setup-lime-dev-safe.sh
+    ├── utils/                 # Utility scripts
+    │   ├── config-parser.sh
+    │   ├── env-setup.sh
+    │   └── update-repos.sh
+    └── legacy/                # Legacy scripts (deprecated)
+
+For more help on specific commands:
+    lime setup --help
+    lime build --help
+
+EOF
+}
+
+main() {
+    local command="${1:-help}"
+    
+    case "$command" in
+        setup)
+            shift
+            exec "$SCRIPT_DIR/setup.sh" "$@"
+            ;;
+        build)
+            shift
+            exec "$SCRIPT_DIR/build.sh" "$@"
+            ;;
+        check)
+            exec "$SCRIPT_DIR/core/check-setup.sh"
+            ;;
+        update)
+            exec "$SCRIPT_DIR/utils/update-repos.sh"
+            ;;
+        clean)
+            exec "$SCRIPT_DIR/build.sh" --clean
+            ;;
+        help|-h|--help)
+            usage
+            ;;
+        "")
+            usage
+            ;;
+        *)
+            print_error "Unknown command: $command"
+            echo ""
+            usage
+            exit 1
+            ;;
+    esac
+}
+
+main "$@"

@@ -200,6 +200,12 @@ generated/
 deps/
 vendor/
 
+# Repository Source Code - NEVER TRACK
+# ------------------------------------
+# The repos/ directory contains cloned source repositories
+# These should NEVER be tracked in the lime-build repository
+repos/
+
 # Keep Important Files
 # --------------------
 !.gitkeep

@@ -1,0 +1,320 @@
+#!/usr/bin/env bash
+#
+# LibreMesh Development Environment Setup - Safe Version
+# Non-disruptive setup with user confirmation for changes
+#
+
+set -e
+
+WORK_DIR="$(pwd)"
+LIME_BUILD_DIR="$WORK_DIR"
+CONFIG_FILE="$LIME_BUILD_DIR/configs/versions.conf"
+RELEASE_MODE="${LIME_RELEASE_MODE:-false}"
+
+print_info() {
+    echo "[INFO] $1"
+}
+
+print_error() {
+    echo "[ERROR] $1" >&2
+}
+
+print_success() {
+    echo "[SUCCESS] $1"
+}
+
+print_warning() {
+    echo "[WARNING] $1" >&2
+}
+
+print_question() {
+    echo -n "[QUESTION] $1 (y/N): "
+}
+
+ask_user() {
+    local question="$1"
+    local default="${2:-n}"
+    
+    print_question "$question"
+    read -r response
+    response="${response:-$default}"
+    
+    case "$response" in
+        [Yy]|[Yy][Ee][Ss])
+            return 0
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
+# Check if running from lime-build directory
+check_directory() {
+    if [[ ! "$(basename "$PWD")" == "lime-build" ]]; then
+        print_error "This script should be run from the lime-build directory"
+        exit 1
+    fi
+    
+    if [[ ! -f "$CONFIG_FILE" ]]; then
+        print_error "Configuration file not found: $CONFIG_FILE"
+        exit 1
+    fi
+}
+
+# Parse configuration file
+parse_config() {
+    print_info "Using configuration: $CONFIG_FILE"
+    print_info "Release mode: $RELEASE_MODE"
+}
+
+# Get repository configuration
+get_repo_config() {
+    local repo_name="$1"
+    local section="repositories"
+    
+    # Check if we should use release overrides
+    if [[ "$RELEASE_MODE" == "true" ]]; then
+        local release_key="${repo_name}_release"
+        if grep -q "^${release_key}=" "$CONFIG_FILE"; then
+            section="release_overrides"
+            repo_name="$release_key"
+        fi
+    fi
+    
+    # Extract configuration
+    local config=$(grep "^${repo_name}=" "$CONFIG_FILE" 2>/dev/null || echo "")
+    if [[ -n "$config" ]]; then
+        echo "${config#*=}"
+    else
+        print_error "No configuration found for repository: $1"
+        return 1
+    fi
+}
+
+# Check system dependencies (non-disruptive)
+check_dependencies() {
+    print_info "Checking system dependencies..."
+    
+    local missing_deps=()
+    local deps=(qemu-system-x86 qemu-utils bridge-utils dnsmasq screen curl wget git build-essential nodejs npm cpio tar gzip)
+    
+    for dep in "${deps[@]}"; do
+        if ! command -v "$dep" >/dev/null 2>&1 && ! dpkg -l | grep -q "^ii.*$dep"; then
+            missing_deps+=("$dep")
+        fi
+    done
+    
+    if [[ ${#missing_deps[@]} -gt 0 ]]; then
+        print_warning "Missing dependencies: ${missing_deps[*]}"
+        print_info "To install: sudo apt-get install ${missing_deps[*]}"
+        
+        if ask_user "Install missing dependencies now?"; then
+            sudo apt-get update
+            sudo apt-get install -y "${missing_deps[@]}"
+        else
+            print_warning "Some features may not work without these dependencies"
+        fi
+    else
+        print_success "All dependencies satisfied"
+    fi
+}
+
+# Safe repository cloning/updating
+safe_clone_repository() {
+    local repo_name="$1"
+    local config=$(get_repo_config "$repo_name")
+    
+    if [[ -z "$config" ]]; then
+        print_warning "Skipping $repo_name: no configuration found"
+        return 0
+    fi
+    
+    IFS='|' read -r repo_url branch remote_name <<< "$config"
+    local dir_name="${repo_name/_/-}"
+    
+    print_info "Processing $repo_name -> $dir_name"
+    print_info "  URL: $repo_url"
+    print_info "  Branch: $branch"
+    print_info "  Remote: $remote_name"
+    
+    if [[ ! -d "$dir_name" ]]; then
+        print_info "Repository $dir_name not found"
+        if ask_user "Clone $dir_name?"; then
+            if [[ "$repo_name" == "openwrt" ]]; then
+                print_info "  Using developer-specified command"
+                git clone -b v24.10.1 --single-branch https://git.openwrt.org/openwrt/openwrt.git "$dir_name"
+            elif [[ "$branch" =~ ^v[0-9] ]]; then
+                git clone -b "$branch" --single-branch "$repo_url" "$dir_name"
+            else
+                git clone -b "$branch" "$repo_url" "$dir_name"
+            fi
+            
+            if [[ "$remote_name" != "origin" ]]; then
+                cd "$dir_name"
+                git remote rename origin "$remote_name"
+                cd ..
+            fi
+        else
+            print_warning "Skipping $dir_name - some functionality may not work"
+        fi
+    else
+        print_info "Repository $dir_name already exists"
+        cd "$dir_name"
+        
+        # Check for uncommitted changes
+        if ! git diff --quiet || ! git diff --cached --quiet; then
+            print_warning "Repository $dir_name has uncommitted changes"
+            if ask_user "Stash changes and update?"; then
+                git stash push -m "Auto-stash before update"
+            else
+                print_info "  Skipping update to preserve local changes"
+                cd ..
+                return 0
+            fi
+        fi
+        
+        # Safe remote handling
+        if ! git remote | grep -q "$remote_name"; then
+            if ask_user "Add remote '$remote_name' to $dir_name?"; then
+                git remote add "$remote_name" "$repo_url"
+            fi
+        else
+            # Check if remote URL matches
+            local current_url=$(git remote get-url "$remote_name" 2>/dev/null || echo "")
+            if [[ "$current_url" != "$repo_url" ]]; then
+                print_warning "Remote '$remote_name' URL mismatch:"
+                print_warning "  Current: $current_url"
+                print_warning "  Expected: $repo_url"
+                if ask_user "Update remote URL?"; then
+                    git remote set-url "$remote_name" "$repo_url"
+                fi
+            fi
+        fi
+        
+        # Safe fetch and update
+        if git remote | grep -q "$remote_name"; then
+            git fetch "$remote_name"
+            if [[ ! "$branch" =~ ^v[0-9] ]]; then
+                local current_branch=$(git branch --show-current 2>/dev/null || echo "")
+                if [[ "$current_branch" == "$branch" ]]; then
+                    if ask_user "Pull latest changes for $branch branch?"; then
+                        git pull "$remote_name" "$branch"
+                    fi
+                else
+                    print_info "  Currently on different branch: $current_branch"
+                    if ask_user "Switch to $branch branch?"; then
+                        git checkout "$branch"
+                        git pull "$remote_name" "$branch"
+                    fi
+                fi
+            fi
+        fi
+        cd ..
+    fi
+}
+
+# Safe repository setup
+safe_clone_repositories() {
+    print_info "Setting up repositories in repos/ directory..."
+    
+    mkdir -p repos
+    cd repos
+    
+    local repos=(lime_app lime_packages librerouteros kconfig_utils openwrt)
+    
+    for repo in "${repos[@]}"; do
+        safe_clone_repository "$repo"
+    done
+    
+    cd "$LIME_BUILD_DIR"
+}
+
+# Safe system setup
+safe_setup_system() {
+    print_info "Checking system configuration..."
+    
+    # Check KVM support
+    if grep -q "vmx\|svm" /proc/cpuinfo; then
+        print_info "Hardware virtualization supported"
+        
+        # Check if user is in kvm group
+        if ! groups | grep -q kvm; then
+            print_warning "User not in 'kvm' group"
+            if ask_user "Add user to kvm group? (requires logout to take effect)"; then
+                sudo usermod -a -G kvm "$USER"
+                print_warning "Please log out and back in for group changes to take effect"
+            fi
+        else
+            print_success "User already in kvm group"
+        fi
+        
+        # Check kernel modules
+        if ! lsmod | grep -q "^kvm"; then
+            print_warning "KVM modules not loaded"
+            if ask_user "Load KVM kernel modules?"; then
+                sudo modprobe kvm-intel 2>/dev/null || sudo modprobe kvm-amd 2>/dev/null || print_warning "Could not load KVM modules"
+            fi
+        fi
+    else
+        print_warning "Hardware virtualization not supported - QEMU will be slower"
+    fi
+    
+    # Check bridge and tun modules
+    for module in bridge tun; do
+        if ! lsmod | grep -q "^$module"; then
+            if ask_user "Load $module kernel module?"; then
+                sudo modprobe "$module" 2>/dev/null || print_warning "Could not load $module module"
+            fi
+        fi
+    done
+}
+
+# Show environment information
+show_environment_info() {
+    print_info "Environment Information:"
+    echo "  Release mode: $RELEASE_MODE"
+    echo "  Configuration: $CONFIG_FILE"
+    echo "  Working directory: $LIME_BUILD_DIR"
+    
+    if [[ "$RELEASE_MODE" == "true" ]]; then
+        print_warning "Running in RELEASE MODE - using release repository overrides"
+    fi
+    
+    print_info ""
+    print_info "This script will:"
+    echo "  - Check system dependencies (install with permission)"
+    echo "  - Clone/update repositories (with confirmation)"
+    echo "  - Set up system configuration (with permission)"
+    echo "  - Preserve existing work and local changes"
+    print_info ""
+    
+    if ! ask_user "Continue with safe setup?"; then
+        print_info "Setup cancelled by user"
+        exit 0
+    fi
+}
+
+# Main execution
+main() {
+    print_info "LibreMesh Development Environment Setup - Safe Version"
+    
+    check_directory
+    parse_config
+    show_environment_info
+    check_dependencies
+    safe_clone_repositories
+    safe_setup_system
+    
+    print_success "Safe setup completed!"
+    echo ""
+    echo "Next steps:"
+    echo "  ./scripts/librerouteros-wrapper.sh librerouter-v1    # Build firmware"
+    echo "  ./scripts/docker-build.sh librerouter-v1            # Build with Docker"
+    echo ""
+    if [[ "$RELEASE_MODE" == "true" ]]; then
+        print_info "Release repositories configured for pre-release testing"
+    fi
+}
+
+main "$@"

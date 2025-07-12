@@ -2,12 +2,15 @@
 #
 # LibreMesh Development Environment Setup
 # Fetches repositories, installs dependencies, and configures QEMU development
+# Uses centralized configuration for reproducible infrastructure replication
 #
 
 set -e
 
 WORK_DIR="$(pwd)"
 LIME_BUILD_DIR="$WORK_DIR"
+CONFIG_FILE="$LIME_BUILD_DIR/configs/versions.conf"
+RELEASE_MODE="${LIME_RELEASE_MODE:-false}"
 
 print_info() {
     echo "[INFO] $1"
@@ -15,6 +18,49 @@ print_info() {
 
 print_error() {
     echo "[ERROR] $1" >&2
+}
+
+print_success() {
+    echo "[SUCCESS] $1"
+}
+
+print_warning() {
+    echo "[WARNING] $1" >&2
+}
+
+# Parse configuration file
+parse_config() {
+    if [[ ! -f "$CONFIG_FILE" ]]; then
+        print_error "Configuration file not found: $CONFIG_FILE"
+        exit 1
+    fi
+    
+    print_info "Using configuration: $CONFIG_FILE"
+    print_info "Release mode: $RELEASE_MODE"
+}
+
+# Get repository configuration
+get_repo_config() {
+    local repo_name="$1"
+    local section="repositories"
+    
+    # Check if we should use release overrides
+    if [[ "$RELEASE_MODE" == "true" ]]; then
+        local release_key="${repo_name}_release"
+        if grep -q "^${release_key}=" "$CONFIG_FILE"; then
+            section="release_overrides"
+            repo_name="$release_key"
+        fi
+    fi
+    
+    # Extract configuration
+    local config=$(grep "^${repo_name}=" "$CONFIG_FILE" 2>/dev/null || echo "")
+    if [[ -n "$config" ]]; then
+        echo "${config#*=}"
+    else
+        print_error "No configuration found for repository: $1"
+        return 1
+    fi
 }
 
 # Check if running from lime-build directory
@@ -87,7 +133,68 @@ install_dependencies() {
     fi
 }
 
-# Clone or update repositories
+# Clone or update a single repository based on configuration
+clone_repository() {
+    local repo_name="$1"
+    local config=$(get_repo_config "$repo_name")
+    
+    if [[ -z "$config" ]]; then
+        print_warning "Skipping $repo_name: no configuration found"
+        return 0
+    fi
+    
+    IFS='|' read -r repo_url branch remote_name <<< "$config"
+    local dir_name="${repo_name/_/-}"  # Convert underscore to dash for directory
+    
+    print_info "Processing $repo_name -> $dir_name"
+    print_info "  URL: $repo_url"
+    print_info "  Branch: $branch"
+    print_info "  Remote: $remote_name"
+    
+    if [[ ! -d "$dir_name" ]]; then
+        print_info "Cloning $dir_name..."
+        if [[ "$repo_name" == "openwrt" ]]; then
+            # Use developer-specified OpenWrt clone command
+            print_info "  Using developer-specified command: git clone -b v24.10.1 --single-branch https://git.openwrt.org/openwrt/openwrt.git"
+            git clone -b v24.10.1 --single-branch https://git.openwrt.org/openwrt/openwrt.git "$dir_name"
+        elif [[ "$branch" =~ ^v[0-9] ]]; then
+            # Handle version tags
+            git clone -b "$branch" --single-branch "$repo_url" "$dir_name"
+        else
+            # Handle regular branches
+            git clone -b "$branch" "$repo_url" "$dir_name"
+        fi
+        
+        # Set up remote tracking if different from origin
+        if [[ "$remote_name" != "origin" ]]; then
+            cd "$dir_name"
+            git remote rename origin "$remote_name"
+            cd ..
+        fi
+    else
+        print_info "Repository $dir_name already exists"
+        cd "$dir_name"
+        
+        # Add remote if it doesn't exist
+        if ! git remote | grep -q "$remote_name"; then
+            git remote add "$remote_name" "$repo_url"
+        fi
+        
+        # Fetch and update if not on a tag
+        git fetch "$remote_name"
+        if [[ ! "$branch" =~ ^v[0-9] ]]; then
+            local current_branch=$(git branch --show-current 2>/dev/null || echo "")
+            if [[ "$current_branch" == "$branch" ]]; then
+                git pull "$remote_name" "$branch"
+            else
+                print_info "  Currently on different branch: $current_branch"
+            fi
+        fi
+        cd ..
+    fi
+}
+
+# Clone or update all repositories
 clone_repositories() {
     print_info "Setting up repositories in repos/ directory..."
     
@@ -95,49 +202,12 @@ clone_repositories() {
     mkdir -p repos
     cd repos
     
-    # LibreMesh web interface
-    if [[ ! -d "lime-app" ]]; then
-        print_info "Cloning lime-app..."
-        git clone https://github.com/libremesh/lime-app.git
-    else
-        print_info "Updating lime-app..."
-        cd lime-app && git fetch --all && git pull origin master && cd ..
-    fi
+    # Process each repository from configuration
+    local repos=("lime_app" "lime_packages" "librerouteros" "kconfig_utils" "openwrt")
     
-    # LibreMesh packages
-    if [[ ! -d "lime-packages" ]]; then
-        print_info "Cloning lime-packages..."
-        git clone https://github.com/libremesh/lime-packages.git
-    else
-        print_info "Updating lime-packages..."
-        cd lime-packages && git fetch --all && git pull origin master && cd ..
-    fi
-    
-    # LibreRouterOS firmware
-    if [[ ! -d "librerouteros" ]]; then
-        print_info "Cloning librerouteros..."
-        git clone https://gitlab.com/librerouter/librerouteros.git
-    else
-        print_info "Updating librerouteros..."
-        cd librerouteros && git fetch --all && git pull origin librerouter-1.5 && cd ..
-    fi
-    
-    # OpenWrt source (specific version)
-    if [[ ! -d "openwrt" ]]; then
-        print_info "Cloning OpenWrt v24.10.1..."
-        git clone -b v24.10.1 --single-branch https://git.openwrt.org/openwrt/openwrt.git
-    else
-        print_info "OpenWrt already exists (specific version v24.10.1)"
-    fi
-    
-    # kconfig-utils if needed
-    if [[ ! -d "kconfig-utils" ]]; then
-        print_info "Cloning kconfig-utils..."
-        git clone https://github.com/gustavoz/kconfig-utils.git
-    else
-        print_info "Updating kconfig-utils..."
-        cd kconfig-utils && git fetch --all && git pull origin master && cd ..
-    fi
+    for repo in "${repos[@]}"; do
+        clone_repository "$repo"
+    done
     
     cd "$LIME_BUILD_DIR"
 }
@@ -279,11 +349,25 @@ EOF
     chmod +x "$LIME_BUILD_DIR/dev.sh"
 }
 
+# Show environment information
+show_environment_info() {
+    print_info "Environment Information:"
+    echo "  Release mode: $RELEASE_MODE"
+    echo "  Configuration: $CONFIG_FILE"
+    echo "  Working directory: $LIME_BUILD_DIR"
+    
+    if [[ "$RELEASE_MODE" == "true" ]]; then
+        print_warning "Running in RELEASE MODE - using release repository overrides"
+    fi
+}
+
 # Main execution
 main() {
     print_info "Setting up LibreMesh development environment..."
     
     check_directory
+    parse_config
+    show_environment_info
     install_dependencies
     clone_repositories
     setup_lime_app
@@ -293,7 +377,7 @@ main() {
     create_dev_script
     
     if test_setup; then
-        print_info "Setup completed successfully!"
+        print_success "Setup completed successfully!"
         echo ""
         echo "Development commands:"
         echo "  ./dev.sh start    - Start QEMU development environment"
@@ -302,6 +386,9 @@ main() {
         echo ""
         echo "Access lime-app at: http://10.13.0.1/app/"
         echo ""
+        if [[ "$RELEASE_MODE" == "true" ]]; then
+            print_info "Release repositories have been set up for pre-release testing"
+        fi
         echo "Note: You may need to log out and back in for group changes to take effect."
     else
         print_error "Setup completed with issues. Check the output above."

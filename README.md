@@ -40,11 +40,14 @@ lime-build/
 git clone <your-lime-build-repo>
 cd lime-build
 
-# Build using Docker (recommended)
-./scripts/docker-build.sh
+# Set up environment (safe, interactive)
+./scripts/lime setup install
 
-# Or build directly
-./scripts/build.sh
+# Build firmware (native method, fastest)
+./scripts/lime build
+
+# Or build with Docker (containerized, requires network)
+./scripts/lime build docker
 ```
 
 ### For lime-app Development
@@ -65,52 +68,43 @@ firefox http://10.13.0.1/app/
 
 ## Build Options
 
-### Docker Build (Recommended)
+### Build Commands
 
 ```bash
-# Standard build
-./scripts/docker-build.sh
+# Main interface (recommended)
+./scripts/lime build                     # Native build (fastest)
+./scripts/lime build docker              # Docker build (isolated)
+./scripts/lime build --clean             # Clean environment
 
-# Clean build (removes previous artifacts)
-./scripts/docker-build-clean.sh
+# Specific targets
+./scripts/lime build native librerouter-v1        # LibreRouter v1
+./scripts/lime build native hilink_hlk-7621a-evb  # HiLink board
 
-# Simple manual build
-./scripts/docker-build-simple-manual.sh
+# Development options
+./scripts/lime build native --download-only       # Dependencies only
+./scripts/lime build docker --shell               # Interactive shell
 ```
 
-### Direct Build
+### Setup Commands
 
 ```bash
-# Build for LibreRouter v1 (default)
-./scripts/build.sh
-
-# Build for specific target
-./scripts/build.sh -t x86_64
-./scripts/build.sh -t multi     # Multiple ath79 devices
-
-# Individual build steps
-./scripts/build.sh prereq       # Check prerequisites
-./scripts/build.sh feeds        # Update feeds
-./scripts/build.sh config       # Configure target
-./scripts/build.sh menuconfig   # Interactive config
-./scripts/build.sh build        # Build firmware
-
-# Cleaning
-./scripts/build.sh clean        # Clean build
-./scripts/build.sh dirclean     # Deep clean
-./scripts/build.sh distclean    # Full reset
+# Environment management
+./scripts/lime setup check              # Check current status
+./scripts/lime setup install            # Safe interactive setup
+./scripts/lime setup install --release  # Release testing setup
+./scripts/lime update                   # Update repositories
 ```
 
-## Docker Environments
 
-- `Dockerfile.librerouteros` - Main build environment
-- `Dockerfile.librerouteros-v2` - Alternative configuration
-- `Dockerfile.build-py2` - Python 2 compatibility support
+## Build System
 
-Using Docker Compose:
-```bash
-docker-compose up build-env
-```
+LibreRouterOS uses its native build system with two methods:
+
+- **Native Build**: Direct execution with environment setup
+- **Docker Build**: Containerized build using original LibreRouterOS Dockerfile
+
+Both methods use the same underlying `librerouteros_build.sh` script with 
+the `final-release` lime-packages configuration.
 
 ## Development Features
 

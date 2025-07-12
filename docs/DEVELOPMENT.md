@@ -3,50 +3,46 @@
 ## Quick Start
 ```bash
 # Setup environment
-./setup-environment.sh
+./scripts/setup-lime-dev.sh
 
-# Build for testing
-./build-librerouteros.sh ../librerouteros x86_64
+# Build LibreRouterOS firmware
+./scripts/librerouteros-wrapper.sh librerouter-v1
 
-# Monitor build
-./monitor-build.sh start
+# Or with Docker
+./scripts/docker-build.sh librerouter-v1
 ```
 
 ## Development Cycle
 
 1. **Environment Setup** (once)
    ```bash
-   ./setup-environment.sh
+   ./scripts/setup-lime-dev.sh
    ```
 
-2. **Repository Preparation**
+2. **Build Firmware**
    ```bash
-   git clone <repo> target-repo
-   cd target-repo
-   # Make changes
-   ```
-
-3. **Build and Test**
-   ```bash
-   ../lime-build/build-librerouteros.sh . x86_64
-   ```
-
-4. **Validation**
-   ```bash
-   # Check images
-   ls -la bin/targets/*/
+   # Native build (recommended)
+   ./scripts/librerouteros-wrapper.sh librerouter-v1
    
-   # Test in QEMU
-   qemu-system-x86_64 -m 512 -nographic -kernel bin/targets/x86/64/openwrt-*-kernel.bin
+   # Docker build (when network available)
+   ./scripts/docker-build.sh librerouter-v1
    ```
 
-## Adding New Targets
-1. Create configuration file in `configs/`
-2. Add target to `build.sh` switch statement
-3. Update `build-librerouteros.sh` validation
-4. Test build process
+3. **Validation**
+   ```bash
+   # Check images (in librerouteros repository)
+   ls -la repos/librerouteros/build/bin/targets/*/
+   ```
 
-## Extending Build System
-- Add new Docker base images in `Dockerfile.*`
-- Extend monitoring in `monitor-build.sh`
-- Add validation in `validate-config.sh`
+## Supported Targets
+
+LibreRouterOS supports these hardware targets:
+- `librerouter-v1` - LibreRouter v1 hardware (default)
+- `hilink_hlk-7621a-evb` - HiLink HLK-7621A evaluation board
+
+## Build Configuration
+
+The build system automatically uses:
+- **lime-packages**: `javierbrk/lime-packages:final-release` branch
+- **LibreRouterOS**: Native build system with pre-configured packages
+- **OpenWrt**: Version v24.10.1 as base
