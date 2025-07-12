@@ -1,5 +1,5 @@
-# Lime-Build Master Repository - Git Ignore Rules
-# ================================================
+# Lime-Dev Repository - Git Ignore Rules
+# ========================================
 
 # Build Artifacts and Output
 # --------------------------
@@ -203,8 +203,23 @@ vendor/
 # Repository Source Code - NEVER TRACK
 # ------------------------------------
 # The repos/ directory contains cloned source repositories
-# These should NEVER be tracked in the lime-build repository
+# These should NEVER be tracked in the lime-dev repository
 repos/
+
+# AI Tools Output and Temporary Files
+# -----------------------------------
+tools/ai/*.json
+tools/ai/*.md
+tools/ai/*.txt
+tools/ai/output/
+ai-reports/
+analysis-output/
+
+# Verification and Test Output
+# ----------------------------
+verification-results/
+test-output/
+*.test.log
 
 # Keep Important Files
 # --------------------
@@ -216,8 +231,11 @@ repos/
 !configs/**
 !docs/
 !docs/**
+!tools/
+!tools/**
 !README.md
 !CLAUDE.md
+!CHANGELOG.md
 !LICENSE
 !Makefile
 !*.sh
