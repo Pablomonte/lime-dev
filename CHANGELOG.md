@@ -5,6 +5,45 @@ All notable changes to the LibreRouterOS Build Environment will be documented in
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2025-07-12
+
+### Added
+- **Unified Command Interface**: Single `lime` command for all operations
+- **Script Organization**: Hierarchical structure with `core/`, `utils/`, `legacy/` directories
+- **Centralized Configuration**: `configs/versions.conf` for repository and build settings
+- **Release Mode Support**: `--release` flag for javierbrk repository overrides
+- **Infrastructure Replication**: Complete documentation and automation for environment setup
+- **Safe Setup System**: User confirmation for potentially disruptive operations
+- **Environment Status Checking**: Comprehensive system requirement validation
+- **Smart Path Resolution**: Scripts work from any directory location
+- **Git Change Detection**: Automatic stashing of uncommitted changes during updates
+
+### Changed
+- **BREAKING**: Main interface now `./scripts/lime [command]` instead of individual scripts
+- **Docker System**: Integrated with native LibreRouterOS Docker instead of wrapper system
+- **Build Commands**: Simplified to `lime build` (native) and `lime build docker`
+- **Setup Process**: Default to safe interactive setup with `lime setup install`
+- **Repository Management**: Smart branch tracking with upstream remote detection
+- **Documentation**: Updated all examples to use new command interface
+
+### Removed
+- **Docker Wrapper System**: Eliminated redundant Docker configurations
+- **Legacy Build Scripts**: Moved to `legacy/` directory (archived, not deleted)
+- **Duplicate Setup Scripts**: Consolidated multiple setup approaches
+- **Build Method Confusion**: Removed competing/conflicting build systems
+
+### Fixed
+- **Git Tracking Issues**: `repos/` directory properly ignored
+- **Docker Integration**: Uses original LibreRouterOS Docker system correctly
+- **Environment Mapping**: Native builds work with lime-build repository structure
+- **OpenWrt Source**: Uses developer-specified exact clone command
+- **Path Dependencies**: All scripts work regardless of current working directory
+
+### Security
+- **Non-disruptive Defaults**: Safe setup as default path with user confirmation
+- **Change Preservation**: Git stashing prevents loss of local modifications
+- **Environment Isolation**: Proper separation between infrastructure and source repositories
+
 ## [1.0.0] - 2025-07-10
 
 ### Added
