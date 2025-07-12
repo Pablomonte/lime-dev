@@ -87,34 +87,66 @@ install_dependencies() {
     fi
 }
 
-# Clone repositories
+# Clone or update repositories
 clone_repositories() {
-    print_info "Cloning repositories..."
+    print_info "Setting up repositories in repos/ directory..."
     
+    # Ensure repos directory exists
+    mkdir -p repos
+    cd repos
+    
+    # LibreMesh web interface
     if [[ ! -d "lime-app" ]]; then
+        print_info "Cloning lime-app..."
         git clone https://github.com/libremesh/lime-app.git
     else
-        print_info "lime-app already exists"
+        print_info "Updating lime-app..."
+        cd lime-app && git fetch --all && git pull origin master && cd ..
     fi
     
+    # LibreMesh packages
     if [[ ! -d "lime-packages" ]]; then
+        print_info "Cloning lime-packages..."
         git clone https://github.com/libremesh/lime-packages.git
     else
-        print_info "lime-packages already exists"
+        print_info "Updating lime-packages..."
+        cd lime-packages && git fetch --all && git pull origin master && cd ..
     fi
     
-    if [[ ! -d "openwrt" ]]; then
-        git clone https://github.com/openwrt/openwrt.git
+    # LibreRouterOS firmware
+    if [[ ! -d "librerouteros" ]]; then
+        print_info "Cloning librerouteros..."
+        git clone https://gitlab.com/librerouter/librerouteros.git
     else
-        print_info "openwrt already exists"
+        print_info "Updating librerouteros..."
+        cd librerouteros && git fetch --all && git pull origin librerouter-1.5 && cd ..
     fi
+    
+    # OpenWrt source (specific version)
+    if [[ ! -d "openwrt" ]]; then
+        print_info "Cloning OpenWrt v24.10.1..."
+        git clone -b v24.10.1 --single-branch https://git.openwrt.org/openwrt/openwrt.git
+    else
+        print_info "OpenWrt already exists (specific version v24.10.1)"
+    fi
+    
+    # kconfig-utils if needed
+    if [[ ! -d "kconfig-utils" ]]; then
+        print_info "Cloning kconfig-utils..."
+        git clone https://github.com/gustavoz/kconfig-utils.git
+    else
+        print_info "Updating kconfig-utils..."
+        cd kconfig-utils && git fetch --all && git pull origin master && cd ..
+    fi
+    
+    cd "$LIME_BUILD_DIR"
 }
 
 # Setup lime-app
 setup_lime_app() {
     print_info "Setting up lime-app..."
     
-    cd "$LIME_BUILD_DIR/lime-app"
+    cd "$LIME_BUILD_DIR/repos/lime-app"
     
     if [[ ! -d "node_modules" ]]; then
         npm install
@@ -130,7 +162,7 @@ setup_lime_app() {
 setup_lime_packages() {
     print_info "Setting up lime-packages..."
     
-    cd "$LIME_BUILD_DIR/lime-packages"
+    cd "$LIME_BUILD_DIR/repos/lime-packages"
     
     # Make tools executable
     chmod +x tools/* 2>/dev/null || true
@@ -159,7 +191,7 @@ setup_system() {
 download_images() {
     print_info "Checking for LibreMesh images..."
     
-    cd "$LIME_BUILD_DIR/lime-packages"
+    cd "$LIME_BUILD_DIR/repos/lime-packages"
     
     if [[ ! -d "build" ]]; then
         mkdir -p build
@@ -184,7 +216,7 @@ download_images() {
 test_setup() {
     print_info "Testing QEMU setup..."
     
-    cd "$LIME_BUILD_DIR/lime-app"
+    cd "$LIME_BUILD_DIR/repos/lime-app"
     
     # Test if qemu configs work
     if npm run qemu:configs >/dev/null 2>&1; then
@@ -203,7 +235,7 @@ create_dev_script() {
 #!/usr/bin/env bash
 # LibreMesh development helper
 
-cd "$(dirname "$0")/lime-app"
+cd "$(dirname "$0")/../repos/lime-app"
 
 case "${1:-help}" in
     start)

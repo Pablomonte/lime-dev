@@ -311,7 +311,7 @@ EOF
 
 3. **Build and Test**
    ```bash
-   ../lime-build/build-librerouteros.sh . x86_64
+   ../scripts/build-librerouteros.sh . x86_64
    ```
 
 4. **Validation**
