@@ -1,176 +1,209 @@
-# LibreRouterOS Build Environment
+# Lime-Build
 
-This directory contains the complete build environment for LibreRouterOS, extracted and refined from the development session. It provides a reproducible, containerized build system that solves common OpenWrt build issues.
+A comprehensive build environment and development toolkit for LibreMesh, LibreRouterOS, and related projects.
 
-## 🚀 Quick Start
+## Overview
 
-```bash
-# Clone your LibreRouterOS repository
-git clone <your-librerouteros-repo> target-repo
+Lime-Build provides a unified environment for:
+- Building LibreRouterOS firmware with Docker
+- Developing and testing lime-app with QEMU
+- Managing LibreMesh packages
+- Cross-platform build automation
 
-# Build LibreRouterOS for x86_64
-./build-librerouteros.sh target-repo x86_64
-
-# Monitor the build process
-./monitor-build.sh start
-```
-
-## 📁 Directory Structure
+## Project Structure
 
 ```
 lime-build/
-├── README.md                           # This file
-├── build-librerouteros.sh             # Main build orchestrator
-├── setup-environment.sh               # Environment setup script
-├── Dockerfile.librerouteros-v2        # Ubuntu 18.04 build container
-├── docker-build-clean.sh              # Clean Docker build script
-├── docker-build-simple-manual.sh      # Manual build approach
-├── build.sh                           # OpenWrt build automation
-├── monitor-build.sh                   # Build progress monitoring
-├── validate-config.sh                 # Configuration validation
-└── docs/                              # Documentation
-    ├── ARCHITECTURE.md                # Build system architecture
-    ├── TROUBLESHOOTING.md             # Common issues and solutions
-    └── DEVELOPMENT.md                 # Development workflow
+├── repos/                 # Source repositories
+│   ├── librerouteros/     # LibreRouterOS firmware (OpenWrt-based)
+│   ├── lime-app/          # LibreMesh web interface
+│   ├── lime-packages/     # LibreMesh package collection
+│   └── kconfig-utils/     # Kernel configuration utilities
+├── scripts/               # Build and automation scripts
+│   ├── docker-build.sh    # Main Docker build script
+│   ├── build.sh           # Direct build with options
+│   ├── setup-lime-dev.sh  # Development environment setup
+│   └── ...                # Additional utility scripts
+├── configs/               # Build configurations
+├── docs/                  # Documentation
+├── Dockerfiles/           # Docker build environments
+├── cache/                 # Build cache (git-ignored)
+└── logs/                  # Build logs (git-ignored)
 ```
 
-## 🛠️ Build System Features
+## Quick Start
 
-### Docker-based Isolation
-- **Ubuntu 18.04** base for GLIBC compatibility
-- **Python 2.7** environment for OpenWrt requirements
-- **Complete script collection** from OpenWrt upstream
-- **Clean build environment** avoiding host contamination
+### For LibreRouterOS Firmware Building
 
-### Automated Build Process
-- **Prerequisite checking** (23 build dependencies)
-- **Feed management** (packages, luci, routing, libremesh)
-- **Configuration validation** (essential package selection)
-- **Parallel builds** with configurable job count
-- **Progress monitoring** with real-time status
-
-### Target Support
-- **LibreRouter v1** (ath79/generic) - Primary hardware
-- **x86_64** - Testing and development
-- **Multi-device** - Multiple ath79 devices
-- **Extensible** - Easy to add new targets
-
-## 🏗️ Build Architecture
-
-### Phase 1: Environment Setup
-1. Docker container preparation (Ubuntu 18.04)
-2. OpenWrt script collection (feeds, metadata, version)
-3. Build tool compilation (config, kconfig utilities)
-4. Dependency resolution and validation
-
-### Phase 2: Source Preparation
-1. Feed updates (external package repositories)
-2. Package installation and indexing
-3. Configuration loading (target-specific configs)
-4. Custom configuration application
-
-### Phase 3: Compilation
-1. Toolchain build (cross-compilation tools)
-2. Host tools compilation (build utilities)
-3. Kernel compilation (target-specific kernel)
-4. Package building (all selected packages)
-5. Firmware image generation (bootable images)
-
-## 🔧 Configuration
-
-### Environment Variables
 ```bash
-export BUILD_TARGET=x86_64              # Target architecture
-export BUILD_JOBS=4                     # Parallel build jobs
-export BUILD_LOG_LEVEL=verbose          # Build verbosity
-export DOWNLOAD_DIR=/path/to/downloads   # Package download cache
+# Clone this repository
+git clone <your-lime-build-repo>
+cd lime-build
+
+# Build using Docker (recommended)
+./scripts/docker-build.sh
+
+# Or build directly
+./scripts/build.sh
 ```
+
+### For lime-app Development
+
+```bash
+# Set up complete development environment
+./scripts/setup-lime-dev.sh
+
+# Start QEMU mesh simulation
+./scripts/dev.sh start
+
+# Deploy changes to QEMU
+./scripts/dev.sh deploy
+
+# Access lime-app
+firefox http://10.13.0.1/app/
+```
+
+## Build Options
+
+### Docker Build (Recommended)
+
+```bash
+# Standard build
+./scripts/docker-build.sh
+
+# Clean build (removes previous artifacts)
+./scripts/docker-build-clean.sh
+
+# Simple manual build
+./scripts/docker-build-simple-manual.sh
+```
+
+### Direct Build
+
+```bash
+# Build for LibreRouter v1 (default)
+./scripts/build.sh
+
+# Build for specific target
+./scripts/build.sh -t x86_64
+./scripts/build.sh -t multi     # Multiple ath79 devices
+
+# Individual build steps
+./scripts/build.sh prereq       # Check prerequisites
+./scripts/build.sh feeds        # Update feeds
+./scripts/build.sh config       # Configure target
+./scripts/build.sh menuconfig   # Interactive config
+./scripts/build.sh build        # Build firmware
+
+# Cleaning
+./scripts/build.sh clean        # Clean build
+./scripts/build.sh dirclean     # Deep clean
+./scripts/build.sh distclean    # Full reset
+```
+
+## Docker Environments
+
+- `Dockerfile.librerouteros` - Main build environment
+- `Dockerfile.librerouteros-v2` - Alternative configuration
+- `Dockerfile.build-py2` - Python 2 compatibility support
+
+Using Docker Compose:
+```bash
+docker-compose up build-env
+```
+
+## Development Features
+
+### QEMU Mesh Network Simulation
+- Automatic network bridge configuration
+- TAP interface management
+- Support for multiple firmware versions
+- Console access via screen
+
+### Repository Management
+- Centralized repository structure
+- Git submodule alternative
+- Coordinated versioning
+
+### Build Automation
+- Multi-platform support (Ubuntu, Debian, RHEL, Arch)
+- Dependency management
+- Build artifact caching
+- Real-time monitoring
+
+## Requirements
+
+### System Requirements
+- Linux OS (Ubuntu/Debian recommended)
+- 8GB+ RAM (4GB minimum)
+- 20GB+ free disk space
+- Docker and Docker Compose
+- Git
+
+### For QEMU Development
+- KVM support (recommended)
+- Network administration privileges
+- Node.js 18+ (auto-installed)
+
+## Supported Platforms
 
 ### Build Targets
-- `librerouter` - LibreRouter v1 hardware (default)
-- `x86_64` - x86_64 testing images
-- `multi` - Multiple ath79 devices
+- LibreRouter v1 (ath79/QCA9558)
+- LibreRouter v2 (in development)
+- x86_64 (testing)
+- TP-Link devices (various models)
 
-## 🚨 Troubleshooting
+### Firmware Versions
+- LibreMesh 23.05.5 (stable)
+- LibreRouterOS 24.10.1 (development)
+- OpenWrt 24.10.1 base
 
-### Common Issues
-1. **GLIBC version errors** - Solved by Ubuntu 18.04 container
-2. **Missing scripts** - Solved by OpenWrt script collection
-3. **Python 2.x requirements** - Solved by explicit Python 2.7 setup
-4. **Build failures** - Check logs with `./monitor-build.sh logs`
+## Contributing
 
-### Build Logs
-- `docker-build-clean.log` - Docker build output
-- `build.log` - OpenWrt build output (inside container)
-- Monitor real-time with `./monitor-build.sh start`
+Contributions welcome! Please:
+1. Fork the repository
+2. Create a feature branch
+3. Submit a pull request
 
-## 📋 Requirements
+See [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) for details.
 
-### Host System
-- Docker Engine 20.10+
-- 4GB+ RAM (8GB recommended)
-- 20GB+ free disk space
-- Linux, macOS, or Windows with WSL2
+## Troubleshooting
 
-### Network
-- Internet access for package downloads
-- ~2GB download for first build (cached afterward)
+### Build Issues
+- Check Docker daemon is running
+- Verify sufficient disk space
+- Review logs in `logs/` directory
 
-## 🎯 Usage Examples
+### QEMU Issues
+- Ensure KVM modules loaded: `lsmod | grep kvm`
+- Check network bridges: `ip addr show lime_br0`
+- Console access: `sudo screen -r libremesh`
 
-### Basic Build
+### Common Solutions
 ```bash
-# Build for LibreRouter v1
-./build-librerouteros.sh ../librerouteros librerouter
+# Reset QEMU environment
+./scripts/dev.sh stop && ./scripts/dev.sh start
 
-# Build for x86_64 testing
-./build-librerouteros.sh ../librerouteros x86_64
+# Clean Docker build
+./scripts/docker-build-clean.sh
+
+# Check build dependencies
+./scripts/build.sh prereq
 ```
 
-### Advanced Build
-```bash
-# Custom job count and verbose output
-BUILD_JOBS=8 BUILD_LOG_LEVEL=verbose ./build-librerouteros.sh ../librerouteros x86_64
+## License
 
-# Build with custom download directory
-DOWNLOAD_DIR=/mnt/cache/openwrt ./build-librerouteros.sh ../librerouteros x86_64
-```
+This build environment is licensed under GPL-3.0. Individual repositories maintain their own licenses:
+- LibreRouterOS: GPL-2.0
+- lime-app: AGPL-3.0
+- lime-packages: AGPL-3.0
 
-### Development Workflow
-```bash
-# Setup development environment
-./setup-environment.sh
+## Links
 
-# Validate configuration
-./validate-config.sh ../librerouteros
-
-# Build and monitor
-./build-librerouteros.sh ../librerouteros x86_64 &
-./monitor-build.sh start
-```
-
-## 📚 Documentation
-
-- **Architecture**: Deep dive into build system design
-- **Troubleshooting**: Common issues and solutions
-- **Development**: Contributing and extending the build system
-
-## 🧪 Testing
-
-The build environment has been tested with:
-- Ubuntu 18.04 LTS (primary)
-- LibreRouterOS librerouter-1.5 branch
-- x86_64 and ath79 targets
-- Docker Engine 20.10+
-
-## 🤝 Contributing
-
-This build environment was developed during a comprehensive development session that solved multiple OpenWrt build issues. Contributions are welcome to extend target support and improve automation.
-
-## 📄 License
-
-This build environment maintains the same license as the LibreRouterOS project it builds.
+- [LibreMesh Project](https://libremesh.org)
+- [LibreRouter Hardware](https://librerouter.org)
+- [OpenWrt Project](https://openwrt.org)
 
 ---
 
-*Generated from development session knowledge and tested build processes.*
+**Note**: This is an active development environment. For production firmware, use official releases from the LibreMesh project.

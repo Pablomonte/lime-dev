@@ -129,9 +129,9 @@ setup_target_repo() {
     if [ ! -f "scripts/feeds" ] || [ ! -f "scripts/package-metadata.pl" ]; then
         print_info "OpenWrt scripts missing, checking for openwrt repository..."
         
-        # Look for openwrt repository in parent directories
+        # Look for openwrt repository in lime-build and parent directories
         OPENWRT_REPO=""
-        for dir in ../openwrt ../../openwrt ../../../openwrt; do
+        for dir in "$SCRIPT_DIR/openwrt" ../openwrt ../../openwrt ../../../openwrt; do
             if [ -d "$dir/scripts" ] && [ -f "$dir/scripts/feeds" ]; then
                 OPENWRT_REPO=$(cd "$dir" && pwd)
                 break

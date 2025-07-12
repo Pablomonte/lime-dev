@@ -1,217 +1,185 @@
-# CLAUDE.md - LibreRouterOS Build Environment
+# CLAUDE.md - lime-build Development Environment
 
-This build environment contains the complete containerized build system for LibreRouterOS, extracted and refined from a comprehensive development session that solved multiple OpenWrt build challenges.
+## Repository Purpose
+
+This repository provides a single-script setup for LibreMesh lime-app development with QEMU mesh network simulation. It consolidates the development environment setup that was created during the session for debugging LibreRouterOS kernel boot issues and establishing dual-configuration QEMU support.
 
 ## Session Background
 
-This build environment was created during a development session that addressed several critical OpenWrt build issues:
+This development environment was created to solve the challenge of providing new lime-app developers with a complete, working development setup. The session addressed:
 
-1. **GLIBC Compatibility** - Solved using Ubuntu 18.04 container
-2. **Python 2.x Requirements** - Explicitly configured Python 2.7 environment
-3. **Missing OpenWrt Scripts** - Complete script collection from upstream
-4. **Build Environment Isolation** - Docker containerization approach
-5. **Automated Build Process** - Comprehensive build orchestration
+1. **LibreRouterOS Boot Issues** - Solved kernel 6.6.86 boot parameter problems
+2. **Dual Configuration Support** - LibreMesh 23.05.5 stable + LibreRouterOS 24.10.1 development
+3. **QEMU Network Setup** - Bridge interfaces, TAP devices, KVM acceleration
+4. **Developer Onboarding** - Single-script setup from zero to productive development
 
 ## Key Components
 
-### Docker Environment
-- **Dockerfile.librerouteros-v2** - Ubuntu 18.04 base with Python 2.7
-- **docker-build-clean.sh** - Clean build script avoiding host contamination
-- **docker-compose.yml** - Multi-container orchestration (legacy)
+### Main Setup Script (`setup-lime-dev.sh`)
+- Platform detection (Ubuntu/Debian, RHEL/CentOS, Arch Linux)
+- Dependency installation (QEMU, Node.js, build tools, network utilities)
+- Repository cloning (lime-app, lime-packages, openwrt)
+- System configuration (KVM groups, kernel modules, network bridges)
+- Development environment setup
 
-### Build Scripts
-- **build-librerouteros.sh** - Main build orchestrator
-- **build.sh** - OpenWrt build automation (copied to target repo)
-- **monitor-build.sh** - Real-time build monitoring
-- **setup-environment.sh** - Complete environment setup
+### Development Helper (`dev.sh`)
+Simple command interface for daily development:
+- `./dev.sh start` - Start QEMU mesh router
+- `./dev.sh deploy` - Deploy lime-app changes
+- `./dev.sh stop` - Stop QEMU environment
+- `./dev.sh status` - Check QEMU status
+- `./dev.sh configs` - Show available configurations
 
-### Configuration Management
-- **validate-config.sh** - Repository and environment validation
-- Automatic OpenWrt script collection from upstream
-- Target-specific configuration handling
-
-## Build Process Architecture
-
-### Phase 1: Environment Preparation
-1. Docker container with Ubuntu 18.04 + Python 2.7
-2. OpenWrt script collection from upstream repository
-3. Build tool compilation within container
-4. Dependency validation and setup
-
-### Phase 2: Source Configuration
-1. Feed updates (packages, luci, routing, libremesh)
-2. Package installation and dependency resolution
-3. Target-specific configuration loading
-4. Custom LibreRouterOS configuration application
-
-### Phase 3: Compilation
-1. Cross-compilation toolchain build
-2. Host tools compilation
-3. Kernel compilation for target architecture
-4. Package building (parallel compilation)
-5. Firmware image generation
+### Integrated QEMU Configuration
+Built on the existing qemu-manager.sh system with:
+- Automatic image detection (LibreMesh/LibreRouterOS)
+- Image-specific network configuration
+- Custom boot parameters for different kernels
+- TAP interface management and cleanup
 
 ## Solved Issues
 
-### GLIBC Version Conflicts
-**Problem**: Host system GLIBC 2.33/2.34 incompatible with OpenWrt tools
-**Solution**: Ubuntu 18.04 container with compatible GLIBC version
+### LibreRouterOS Kernel Boot Problem
+**Issue**: LibreRouterOS 24.10.1 with kernel 6.6.86 failed to boot in QEMU
+**Root Cause**: Newer kernels require explicit `rdinit=/sbin/init` boot parameter
+**Solution**: Custom QEMU launcher with proper boot parameters
+- Created `qemu_dev_start_librerouteros` with correct parameters
+- Updated qemu-manager.sh to detect image type and use appropriate launcher
 
-### Missing OpenWrt Scripts
-**Problem**: LibreRouterOS missing essential build scripts
-**Solution**: Automatic script collection from `../openwrt/scripts/`
+### Developer Onboarding Complexity
+**Issue**: Setting up LibreMesh development environment required manual configuration
+**Solution**: Single-script automated setup
+- Handles dependency installation across multiple platforms
+- Configures system requirements (KVM, network bridges)
+- Sets up all repositories and build tools
+- Creates simple development workflow
 
-### Python 2.x Dependencies
-**Problem**: Modern systems lack Python 2.x required by OpenWrt
-**Solution**: Explicit Python 2.7 installation and symlink configuration
+### QEMU Network Configuration
+**Issue**: TAP interface creation failures causing silent QEMU startup problems
+**Solution**: Pre-creation of required network interfaces
+- Creates lime_tap00_1 and lime_tap00_2 before QEMU start
+- Proper cleanup on QEMU stop
+- Bridge interface management
 
-### Build Environment Contamination
-**Problem**: Host system compiled binaries causing build failures
-**Solution**: Clean Docker environment with selective binary removal
+## Development Workflow
 
-## Usage Examples
-
-### Basic Build
+### Initial Setup
 ```bash
-# Setup environment (once)
-./setup-environment.sh
-
-# Build LibreRouterOS for x86_64
-./build-librerouteros.sh ../librerouteros x86_64
-
-# Monitor build progress
-./monitor-build.sh start
+git clone <lime-build-repo>
+cd lime-build
+./setup-lime-dev.sh
 ```
 
-### Advanced Build
+### Daily Development
 ```bash
-# Validate repository first
-./validate-config.sh ../librerouteros
-
-# Build with custom parameters
-BUILD_JOBS=8 ./build-librerouteros.sh ../librerouteros librerouter
-
-# Monitor with logs
-./monitor-build.sh logs
+./dev.sh start     # Start QEMU mesh router
+# Edit code in lime-app/src/...
+./dev.sh deploy    # Deploy changes to QEMU
+# Test at http://10.13.0.1/app/
+./dev.sh stop      # Stop when done
 ```
+
+### Configuration Options
+- **LibreMesh 23.05.5**: Stable mesh networking (default)
+- **LibreRouterOS 24.10.1**: Latest features with kernel 6.6.86
+- Auto-detection based on available images in lime-packages/build/
+
+## Technical Details
+
+### Supported Platforms
+- **Ubuntu/Debian**: apt-get package installation
+- **RHEL/CentOS/Fedora**: yum/dnf package installation  
+- **Arch Linux**: pacman package installation
+- **macOS**: Homebrew support (limited QEMU performance)
+
+### System Requirements
+- 4GB RAM minimum (8GB recommended)
+- 5GB disk space minimum
+- Linux system with KVM support preferred
+- Sudo access for package installation
+
+### Network Configuration
+- Bridge interface: lime_br0 (10.13.0.2/16)
+- QEMU guest IP: 10.13.0.1
+- TAP interfaces: lime_tap00_0, lime_tap00_1, lime_tap00_2
+- Console access: `sudo screen -r libremesh`
 
 ## Repository Structure
 
 ```
 lime-build/
-├── README.md                          # Complete documentation
-├── CLAUDE.md                          # This file - session knowledge
-├── build-librerouteros.sh             # Main orchestrator
-├── setup-environment.sh               # Environment setup
-├── validate-config.sh                 # Configuration validation
-├── Dockerfile.librerouteros-v2        # Ubuntu 18.04 container
-├── docker-build-clean.sh              # Clean Docker build
-├── docker-build-simple-manual.sh      # Manual build approach
-├── build.sh                           # OpenWrt automation
-├── monitor-build.sh                   # Build monitoring
-├── docker-compose.yml                 # Legacy orchestration
-└── docs/                              # Generated documentation
-    ├── ARCHITECTURE.md                # System architecture
-    ├── TROUBLESHOOTING.md             # Issue resolution
-    └── DEVELOPMENT.md                 # Development workflow
+├── setup-lime-dev.sh    # Main setup script
+├── dev.sh               # Development helper
+├── README.md             # User documentation
+├── CLAUDE.md             # This file - session knowledge
+├── lime-app/            # LibreMesh web interface (cloned)
+├── lime-packages/       # LibreMesh packages + QEMU tools (cloned)
+└── openwrt/             # OpenWrt source (cloned)
 ```
 
-## Target Support
+## Integration with Existing Scripts
 
-### Primary Targets
-- **librerouter** - LibreRouter v1 hardware (ath79/generic)
-- **x86_64** - Testing and development images
-- **multi** - Multiple ath79 devices
+This setup leverages the existing lime-app QEMU infrastructure:
+- `qemu-manager.sh` - Enhanced with dual configuration support
+- `qemu-image-configs.sh` - Image detection and configuration
+- `qemu-network-libremesh.sh` - LibreMesh-specific network setup
+- `qemu-network-librerouteros.sh` - LibreRouterOS-specific network setup
+- `qemu_dev_start_librerouteros` - Custom launcher for LibreRouterOS
 
-### Configuration Files
-- `configs/default_config` - LibreRouter v1
-- `configs/default_config_x86_64` - x86_64 testing
-- `configs/default_config_multi` - Multi-device
+## Session Achievements
 
-## Dependencies
+### Successful Problem Resolution
+1. **Identified LibreRouterOS boot issue**: Kernel panic due to missing boot parameters
+2. **Implemented solution**: Custom QEMU launcher with `rdinit=/sbin/init`
+3. **Verified fix**: Both LibreMesh and LibreRouterOS configurations working
+4. **Created comprehensive setup**: Single-script environment deployment
 
-### External Repositories
-- **openwrt** - Source of essential build scripts
-- **kconfig-utils** - Kernel configuration utilities
-- **lime-packages** - LibreMesh package collection
+### Developer Experience Improvements
+1. **Reduced setup time**: From manual configuration to single command
+2. **Cross-platform support**: Works on multiple Linux distributions
+3. **Simple workflow**: Three-command development cycle (start, deploy, stop)
+4. **Comprehensive documentation**: Clear instructions and troubleshooting
 
-### Build Requirements
-- Docker Engine 20.10+
-- 4GB+ RAM (8GB recommended)
-- 20GB+ disk space
-- Linux/macOS/Windows with WSL2
-
-## Session-Proven Capabilities
-
-### Successful Build Phases
-1. ✅ **Docker Environment** - Ubuntu 18.04 with Python 2.7
-2. ✅ **Script Collection** - Complete OpenWrt script set
-3. ✅ **Prerequisite Validation** - All 23 build checks passing
-4. ✅ **Feed Processing** - Package feed updates and installation
-5. ✅ **Configuration Loading** - Target-specific configuration
-6. 🔄 **Toolchain Build** - Cross-compilation tools (in progress)
-
-### Issue Resolution History
-- **GLIBC 2.33/2.34 not found** → Ubuntu 18.04 container
-- **Python 2.x missing** → Explicit Python 2.7 setup
-- **scripts/feeds not found** → OpenWrt script collection
-- **package-metadata.pl missing** → Complete script migration
-- **Docker permission denied** → User group configuration
-
-## Automation Features
-
-### Environment Setup
-- Automatic Docker configuration
-- User permission management
-- Dependency validation
-- Documentation generation
-
-### Build Orchestration
-- Repository validation
-- Script collection automation
-- Target-specific configuration
-- Progress monitoring
-
-### Quality Assurance
-- Configuration validation
-- Build environment testing
-- Error detection and reporting
-- Log aggregation
-
-## Integration Points
-
-### with LibreRouterOS
-- Automatic script collection from upstream
-- Target-specific configuration loading
-- LibreMesh integration validation
-- Hardware support verification
-
-### with OpenWrt Ecosystem
-- Feed management automation
-- Package dependency resolution
-- Kernel configuration handling
-- Image generation workflow
+### Technical Robustness
+1. **Dual configuration support**: Stable and development options
+2. **Automatic dependency management**: Platform-specific package installation
+3. **Network isolation**: Proper bridge and TAP interface handling
+4. **Error handling**: Graceful degradation and clear error messages
 
 ## Future Enhancements
 
-### Planned Features
-- Additional target architecture support
-- Cached build acceleration
-- CI/CD pipeline integration
-- Multi-stage build optimization
+### Potential Improvements
+1. **Image building integration**: Automated LibreMesh/LibreRouterOS builds
+2. **Multiple node support**: QEMU mesh network with multiple routers
+3. **CI/CD integration**: Automated testing in QEMU environment
+4. **Performance optimization**: Build caching and faster deployment
 
 ### Extension Points
-- Custom target configuration
-- Additional container base images
-- Enhanced monitoring capabilities
-- Build artifact management
+1. **Additional targets**: Support for more router architectures
+2. **Custom configurations**: User-defined QEMU parameters
+3. **Development tools**: Integrated debugging and profiling
+4. **Testing framework**: Automated lime-app testing in QEMU
 
-## Development Notes
+## Notes for Maintainers
 
-This build environment represents a complete solution to OpenWrt build challenges, developed through systematic problem-solving and testing. The containerized approach ensures reproducible builds across different host systems while maintaining compatibility with the OpenWrt ecosystem.
+### Critical Components
+- `setup-lime-dev.sh` handles all initial configuration
+- `dev.sh` provides the daily development interface
+- `qemu-manager.sh` in lime-app manages QEMU lifecycle
+- `qemu_dev_start_librerouteros` in lime-packages handles LibreRouterOS boot
 
-The session demonstrated successful progression from initial build failures to a working build environment, with each issue systematically identified and resolved through targeted solutions.
+### Dependencies
+- Requires working lime-app qemu-manager.sh system
+- Depends on lime-packages QEMU tools
+- Needs system packages for QEMU virtualization
+- Assumes standard LibreMesh package structure
+
+### Maintenance
+- Keep dependency lists updated for new platform versions
+- Monitor LibreMesh/LibreRouterOS image format changes
+- Update QEMU boot parameters as needed for new kernels
+- Test on supported platforms regularly
 
 ---
 
-*This knowledge base captures the complete build environment development session and provides the foundation for reproducible LibreRouterOS builds.*
+This lime-build repository represents a complete solution for LibreMesh development environment setup, built from practical problem-solving during the session and designed for ease of use by new developers.

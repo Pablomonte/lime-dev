@@ -1,38 +1,102 @@
-# LibreRouterOS Build Environment - Git Ignore Rules
+# Lime-Build Master Repository - Git Ignore Rules
+# ================================================
 
-# Build Logs and Output
-*.log
-docker-build*.log
-build.log
-lime-build.log
-
-# Docker Build Context (temporary)
-build_context/
-tmp/
-
-# Downloaded Dependencies and Cache
-cache/
-dl/
-downloads/
-
-# Build Artifacts
+# Build Artifacts and Output
+# --------------------------
+build/
 bin/
-build_dir/
-staging_dir/
-toolchain/
+out/
+dist/
+*.img
+*.bin
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.zip
+*.log
 logs/
 
-# Temporary Build Files
-.config
-.config.old
-tmp/
-.tmp/
+# Repository-specific Build Directories
+# -------------------------------------
+# LibreRouterOS/OpenWrt
+repos/librerouteros/bin/
+repos/librerouteros/build_dir/
+repos/librerouteros/staging_dir/
+repos/librerouteros/tmp/
+repos/librerouteros/logs/
+repos/librerouteros/.config
+repos/librerouteros/.config.old
+repos/librerouteros/feeds/
+repos/librerouteros/dl/
+repos/librerouteros/package/feeds/
+repos/librerouteros/key-build*
+repos/librerouteros/.ccache/
+repos/librerouteros/overlay/
 
-# Docker Volumes and Mounts
-output/
+# OpenWrt source
+repos/openwrt/bin/
+repos/openwrt/build_dir/
+repos/openwrt/staging_dir/
+repos/openwrt/tmp/
+repos/openwrt/logs/
+repos/openwrt/.config
+repos/openwrt/.config.old
+repos/openwrt/feeds/
+repos/openwrt/dl/
+repos/openwrt/package/feeds/
+
+# Lime-app
+repos/lime-app/build/
+repos/lime-app/node_modules/
+repos/lime-app/coverage/
+repos/lime-app/dist/
+repos/lime-app/.parcel-cache/
+repos/lime-app/storybook-static/
+repos/lime-app/.nyc_output/
+repos/lime-app/.next/
+repos/lime-app/out/
+
+# Lime-packages
+repos/lime-packages/build/
+repos/lime-packages/bin/
+repos/lime-packages/.keys/
+repos/lime-packages/dl/
+
+# Cache and Downloads
+# -------------------
+cache/
+.cache/
+*.cache
+downloads/
+dl/
+
+# Docker and Container Files
+# --------------------------
+docker-volumes/
+.docker/
+*.pid
+build_context/
 workspace/
+output/
 
-# OS Generated Files
+# Development Environment
+# -----------------------
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-project
+*.sublime-workspace
+.vim/
+
+# OS files
 .DS_Store
 .DS_Store?
 ._*
@@ -40,83 +104,118 @@ workspace/
 .Trashes
 ehthumbs.db
 Thumbs.db
-
-# IDE and Editor Files
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-.vim/
-
-# Backup Files
 *.bak
-*.backup
-*.orig
 
-# Environment Variables (if any secrets)
+# Environment and Secrets
+# -----------------------
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
+*.env
+local.conf
+local.config
+*.local
 
-# Test Results and Coverage
-test-results/
-coverage/
+# Security - Never commit these
+# -----------------------------
+*.pem
+*.key
+*.crt
+id_rsa
+id_rsa.pub
+id_ed25519
+id_ed25519.pub
+.ssh/
+known_hosts
 
-# Node.js (if any web interfaces added)
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Python Cache (for any Python scripts)
+# Language-specific
+# -----------------
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
-env/
 venv/
-.env
-.venv
+ENV/
+env/
+.venv/
 
-# Local Configuration Overrides
-local.conf
-local.config
-*.local
+# Node.js
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.npm/
+.yarn/
 
-# SSH Keys and Certificates (safety)
-*.pem
-*.key
-*.crt
-id_rsa*
-id_ed25519*
+# Testing and Coverage
+# --------------------
+test-results/
+.pytest_cache/
+.coverage
+coverage.xml
+*.cover
+.hypothesis/
+junit.xml
 
-# Docker Generated Files (keep Dockerfiles)
-.dockerignore
+# Documentation Build
+# -------------------
+docs/_build/
+docs/.doctrees/
+site/
 
-# Build System Generated
-feeds/
-feeds.conf
-package/feeds/
+# QEMU and Virtualization
+# -----------------------
+*.qcow2
+*.vmdk
+*.vdi
+qemu-*.pid
+qemu-*.sock
+qemu-*.monitor
 
-# Target Repository Content (when used as working directory)
-target/
-package/
-include/
-scripts/
-tools/
-Makefile
-rules.mk
-BSDmakefile
-Config.in
-feeds.conf.default
+# Temporary Files
+# ---------------
+tmp/
+temp/
+*.tmp
+*.temp
+*.orig
+*.rej
 
-# Keep Essential Files
+# Backup Files
+# ------------
+*.backup
+*.old
+backup/
+backups/
+
+# Generated Files
+# ---------------
+generated/
+.generated/
+
+# Dependencies (except lock files)
+# --------------------------------
+deps/
+vendor/
+
+# Keep Important Files
+# --------------------
+!.gitkeep
+!package-lock.json
+!scripts/
+!scripts/**
+!configs/
+!configs/**
+!docs/
+!docs/**
 !README.md
 !CLAUDE.md
+!LICENSE
+!Makefile
 !*.sh
 !Dockerfile*
 !docker-compose.yml
-!docs/
-!configs/
+!.github/
+!.gitlab-ci.yml
