@@ -6,15 +6,15 @@ This document describes how to replicate the exact build infrastructure used for
 
 For standard development:
 ```bash
-git clone <lime-build-repo>
-cd lime-build
+git clone <lime-dev-repo>
+cd lime-dev
 ./scripts/setup-lime-dev.sh
 ```
 
 For release candidate testing:
 ```bash
-git clone <lime-build-repo>
-cd lime-build
+git clone <lime-dev-repo>
+cd lime-dev
 LIME_RELEASE_MODE=true ./scripts/setup-lime-dev.sh
 ```
 
@@ -52,7 +52,7 @@ In release mode, the system will use:
 
 ### Git Tracking
 
-The `repos/` directory is **never tracked** in the lime-build repository:
+The `repos/` directory is **never tracked** in the lime-dev repository:
 
 ```gitignore
 # Repository Source Code - NEVER TRACK
@@ -128,8 +128,8 @@ REPO_LIBREROUTEROS_DIR  # Path to librerouteros repository
 ### Development Setup
 ```bash
 # Clone and set up development environment
-git clone <lime-build-repo>
-cd lime-build
+git clone <lime-dev-repo>
+cd lime-dev
 ./scripts/setup-lime-dev.sh
 
 # Start development

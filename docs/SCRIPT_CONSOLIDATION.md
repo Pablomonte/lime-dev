@@ -1,10 +1,10 @@
 # Script Consolidation Documentation
 
-This document describes the major script reorganization and consolidation performed to clean up the lime-build development environment.
+This document describes the major script reorganization and consolidation performed to clean up the lime-dev development environment.
 
 ## Overview
 
-The lime-build repository's scripts/ directory was reorganized from 11 scattered scripts into a clean, hierarchical structure with 3 main entry points and organized subdirectories.
+The lime-dev repository's scripts/ directory was reorganized from 11 scattered scripts into a clean, hierarchical structure with 3 main entry points and organized subdirectories.
 
 ## Before vs After
 
@@ -238,4 +238,4 @@ The consolidation has been tested for:
 
 ## Conclusion
 
-This script consolidation significantly improves the lime-build user experience while maintaining all existing functionality. The new structure is more intuitive, safer, and easier to maintain while preserving institutional knowledge in the legacy archive.
+This script consolidation significantly improves the lime-dev user experience while maintaining all existing functionality. The new structure is more intuitive, safer, and easier to maintain while preserving institutional knowledge in the legacy archive.

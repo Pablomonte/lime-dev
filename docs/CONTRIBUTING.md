@@ -1,6 +1,6 @@
-# Contributing to Lime-Build
+# Contributing to Lime-Dev
 
-Thank you for your interest in contributing to Lime-Build!
+Thank you for your interest in contributing to Lime-Dev!
 
 ## How to Contribute
 
@@ -50,11 +50,11 @@ Before submitting:
 
 ```bash
 # Clone your fork
-git clone https://github.com/YOUR-USERNAME/lime-build
-cd lime-build
+git clone https://github.com/YOUR-USERNAME/lime-dev
+cd lime-dev
 
 # Add upstream remote
-git remote add upstream https://github.com/ORIGINAL/lime-build
+git remote add upstream https://github.com/ORIGINAL/lime-dev
 
 # Create branch
 git checkout -b feature/new-feature

@@ -7,7 +7,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-LIME_BUILD_DIR="$(dirname "$SCRIPT_DIR")"
+LIME_BUILD_DIR="$(dirname "$(dirname "$SCRIPT_DIR")")"
 LIBREROUTEROS_DIR="$LIME_BUILD_DIR/repos/librerouteros"
 
 # Check if we're in the right place

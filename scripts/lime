@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
 #
-# Lime-Build - Main Command Interface
-# Unified entry point for all lime-build operations
+# Lime-Dev - Main Command Interface
+# Unified entry point for all lime-dev operations including AI tools, verification, and upstream management
 #
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LIME_DEV_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+TOOLS_DIR="$LIME_DEV_ROOT/tools"
 
 print_info() {
     echo "[INFO] $1"
@@ -18,14 +20,17 @@ print_error() {
 
 usage() {
     cat << EOF
-Lime-Build - LibreMesh Development Environment
+Lime-Dev - LibreMesh Development Environment
 
 Usage: $0 <command> [options]
 
 Main Commands:
     setup           Setup and configure development environment
     build           Build LibreRouterOS firmware
-    check           Check environment status
+    verify          Verify environment and platform setup
+    ai              AI-powered development tools
+    upstream        Upstream contribution management
+    qemu            QEMU virtualization management
     update          Update repositories
     clean           Clean build artifacts
 
@@ -41,35 +46,252 @@ Build Commands:
     lime build native --download-only   # Download dependencies only
     lime build --clean                  # Clean build environment
 
+Verification Commands:
+    lime verify all                     # Complete environment verification
+    lime verify setup                   # Basic setup verification
+    lime verify platform               # Platform-specific checks
+    lime verify qemu                    # QEMU environment validation
+
+AI Development Tools:
+    lime ai review --repo lime-app      # AI code review
+    lime ai docs --repo all             # Documentation analysis
+    lime ai quality --repo lime-packages # Quality assessment
+    lime ai security --repo all         # Security scan
+    lime ai test --repo lime-app        # Test validation
+
+Upstream Contribution:
+    lime upstream setup                 # Configure upstream remotes
+    lime upstream aliases lime-app      # Show git aliases
+    lime upstream prepare              # Prepare upstream PR
+
+QEMU Management:
+    lime qemu start                     # Start QEMU environment
+    lime qemu stop                      # Stop QEMU environment
+    lime qemu status                    # Check QEMU status
+    lime qemu dev-cycle                 # Development workflow
+
 Examples:
-    lime setup check                    # Check if environment is ready
-    lime setup install                  # Initial setup
-    lime build                          # Build firmware
-    lime build docker --shell           # Open Docker shell
-    lime update                         # Update all repositories
-    lime clean                          # Clean everything
+    lime setup install                 # Initial setup
+    lime verify all                    # Verify complete environment
+    lime ai review --repo lime-app     # Code review for lime-app
+    lime build                         # Build firmware
+    lime qemu start                     # Start development QEMU
+    lime upstream setup                # Setup upstream workflow
 
 Directory Structure:
-    scripts/
-    ├── lime                    # This script (main interface)
-    ├── setup.sh               # Setup management
-    ├── build.sh               # Build management  
-    ├── core/                  # Core functionality
-    │   ├── check-setup.sh
-    │   ├── docker-build.sh
-    │   ├── librerouteros-wrapper.sh
-    │   └── setup-lime-dev-safe.sh
-    ├── utils/                 # Utility scripts
-    │   ├── config-parser.sh
-    │   ├── env-setup.sh
-    │   └── update-repos.sh
-    └── legacy/                # Legacy scripts (deprecated)
+    scripts/                  # Core scripts
+    tools/                   # Development tools
+    ├── ai/                 # AI-powered analysis tools
+    ├── verify/             # Environment verification
+    ├── upstream/           # Upstream contribution tools
+    └── qemu/               # QEMU management tools
+    repos/                  # Managed repositories
+    configs/                # Build configurations
 
 For more help on specific commands:
-    lime setup --help
-    lime build --help
+    lime <command> --help
 
 EOF
+}
+
+# AI tools dispatcher
+run_ai_command() {
+    local ai_command="${1:-help}"
+    shift || true
+    
+    case "$ai_command" in
+        review)
+            exec "$TOOLS_DIR/ai/code-review.sh" "$@"
+            ;;
+        docs)
+            exec "$TOOLS_DIR/ai/docs-check.sh" "$@"
+            ;;
+        quality)
+            exec "$TOOLS_DIR/ai/quality-check.sh" "$@"
+            ;;
+        security)
+            exec "$TOOLS_DIR/ai/security-scan.sh" "$@"
+            ;;
+        test)
+            exec "$TOOLS_DIR/ai/test-validation.sh" "$@"
+            ;;
+        help|-h|--help)
+            cat << 'EOF'
+AI Development Tools
+
+Usage: lime ai <command> [options]
+
+Commands:
+    review      Code review analysis
+    docs        Documentation validation
+    quality     Quality assessment
+    security    Security vulnerability scan
+    test        Test coverage validation
+
+Common options:
+    --repo <name>       Repository to analyze (lime-app, lime-packages, librerouteros, all)
+    --output <file>     Output file for results
+    --format <format>   Output format (text, json, markdown)
+    --verbose           Enable verbose output
+
+Examples:
+    lime ai review --repo lime-app
+    lime ai security --repo all --format json
+    lime ai quality --repo lime-packages --verbose
+EOF
+            ;;
+        *)
+            print_error "Unknown AI command: $ai_command"
+            run_ai_command "help"
+            exit 1
+            ;;
+    esac
+}
+
+# Verification dispatcher
+run_verify_command() {
+    local verify_command="${1:-all}"
+    shift || true
+    
+    case "$verify_command" in
+        all)
+            exec "$TOOLS_DIR/verify/setup.sh" "$@"
+            ;;
+        setup)
+            exec "$TOOLS_DIR/verify/setup.sh" --quick "$@"
+            ;;
+        platform)
+            exec "$TOOLS_DIR/verify/setup.sh" --platform-only "$@"
+            ;;
+        qemu)
+            print_info "QEMU verification uses the main environment verification"
+            exec "$TOOLS_DIR/verify/setup.sh" --platform-only "$@"
+            ;;
+        help|-h|--help)
+            cat << 'EOF'
+Environment Verification
+
+Usage: lime verify <command> [options]
+
+Commands:
+    all         Complete environment verification (default)
+    setup       Basic setup verification
+    platform    Platform-specific checks
+    qemu        QEMU environment validation
+
+Options:
+    --verbose   Enable verbose output
+    --quick     Quick verification (essential checks only)
+
+Examples:
+    lime verify all
+    lime verify platform --verbose
+    lime verify setup --quick
+EOF
+            ;;
+        *)
+            print_error "Unknown verify command: $verify_command"
+            run_verify_command "help"
+            exit 1
+            ;;
+    esac
+}
+
+# Upstream tools dispatcher
+run_upstream_command() {
+    local upstream_command="${1:-help}"
+    shift || true
+    
+    case "$upstream_command" in
+        setup)
+            exec "$TOOLS_DIR/upstream/setup-aliases.sh" setup "$@"
+            ;;
+        aliases)
+            exec "$TOOLS_DIR/upstream/setup-aliases.sh" aliases "$@"
+            ;;
+        prepare)
+            print_info "Upstream preparation:"
+            print_info "1. Run: lime upstream setup <repo>"
+            print_info "2. Create feature branch: git feature-start <name>" 
+            print_info "3. Make changes and commit"
+            print_info "4. Generate patch: git create-patch"
+            print_info "5. Review changes: git review-changes"
+            ;;
+        help|-h|--help)
+            cat << 'EOF'
+Upstream Contribution Management
+
+Usage: lime upstream <command> [options]
+
+Commands:
+    setup       Configure upstream remotes and git aliases
+    aliases     Show available git aliases
+    prepare     Prepare upstream contribution (WIP)
+
+Repository options:
+    lime-app, lime-packages, librerouteros, all
+
+Examples:
+    lime upstream setup all
+    lime upstream aliases lime-app
+    lime upstream setup lime-packages
+EOF
+            ;;
+        *)
+            print_error "Unknown upstream command: $upstream_command"
+            run_upstream_command "help"
+            exit 1
+            ;;
+    esac
+}
+
+# QEMU tools dispatcher
+run_qemu_command() {
+    local qemu_command="${1:-help}"
+    shift || true
+    
+    case "$qemu_command" in
+        start|stop|status)
+            # Delegate to existing lime-app qemu tools for now
+            if [[ -d "$LIME_DEV_ROOT/repos/lime-app" && -x "$LIME_DEV_ROOT/repos/lime-app/scripts/qemu-manager.sh" ]]; then
+                exec "$LIME_DEV_ROOT/repos/lime-app/scripts/qemu-manager.sh" "$qemu_command" "$@"
+            else
+                print_error "QEMU tools not available. Run 'lime setup install' first."
+                exit 1
+            fi
+            ;;
+        dev-cycle)
+            print_info "QEMU development cycle:"
+            print_info "1. Start: lime qemu start"
+            print_info "2. Make changes in repos/lime-app/"
+            print_info "3. Deploy: cd repos/lime-app && ./dev.sh deploy"
+            print_info "4. Test at: http://10.13.0.1/app/"
+            print_info "5. Stop: lime qemu stop"
+            ;;
+        help|-h|--help)
+            cat << 'EOF'
+QEMU Management
+
+Usage: lime qemu <command> [options]
+
+Commands:
+    start       Start QEMU environment
+    stop        Stop QEMU environment  
+    status      Check QEMU status
+    dev-cycle   Development workflow (WIP)
+
+Examples:
+    lime qemu start
+    lime qemu status
+    lime qemu stop
+EOF
+            ;;
+        *)
+            print_error "Unknown QEMU command: $qemu_command"
+            run_qemu_command "help"
+            exit 1
+            ;;
+    esac
 }
 
 main() {
@@ -84,7 +306,24 @@ main() {
             shift
             exec "$SCRIPT_DIR/build.sh" "$@"
             ;;
+        verify)
+            shift
+            run_verify_command "$@"
+            ;;
+        ai)
+            shift
+            run_ai_command "$@"
+            ;;
+        upstream)
+            shift
+            run_upstream_command "$@"
+            ;;
+        qemu)
+            shift
+            run_qemu_command "$@"
+            ;;
         check)
+            # Legacy compatibility
             exec "$SCRIPT_DIR/core/check-setup.sh"
             ;;
         update)

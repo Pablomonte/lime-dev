@@ -55,8 +55,9 @@ EOF
 }
 
 check_directory() {
-    if [[ ! "$(basename "$PWD")" == "lime-build" ]]; then
-        print_error "This script should be run from the lime-build directory"
+    local dir_name="$(basename "$PWD")"
+    if [[ ! "$dir_name" =~ ^(lime-build|lime-dev)$ ]]; then
+        print_error "This script should be run from the lime-dev (or lime-build) directory"
         exit 1
     fi
 }
