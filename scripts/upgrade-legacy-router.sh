@@ -208,13 +208,26 @@ transfer_safe_upgrade() {
     local safe_upgrade_path="$TEMP_DIR/$SAFE_UPGRADE_FILE"
     
     print_info "Transferring safe-upgrade script to router..."
+    print_warning "Note: Using alternative transfer methods (SCP/SFTP not available on legacy routers)"
     
-    if scp -oHostKeyAlgorithms=+ssh-rsa -oStrictHostKeyChecking=no \
-           "$safe_upgrade_path" root@"$ROUTER_IP":/tmp/safe-upgrade; then
+    # Use the alternative transfer script
+    if "$SCRIPT_DIR/transfer-to-legacy-router.sh" "$ROUTER_IP" "$safe_upgrade_path" "/tmp/safe-upgrade"; then
         print_success "safe-upgrade transferred successfully"
     else
         print_error "Failed to transfer safe-upgrade script"
-        exit 1
+        print_info "Trying fallback method..."
+        
+        # Fallback: direct base64 transfer via SSH
+        print_info "Attempting direct base64 transfer..."
+        local b64_content=$(base64 "$safe_upgrade_path")
+        
+        if ssh -oHostKeyAlgorithms=+ssh-rsa -oStrictHostKeyChecking=no root@"$ROUTER_IP" \
+               "echo '$b64_content' | base64 -d > /tmp/safe-upgrade 2>/dev/null || echo '$b64_content' | busybox base64 -d > /tmp/safe-upgrade"; then
+            print_success "Fallback transfer successful"
+        else
+            print_error "All transfer methods failed"
+            exit 1
+        fi
     fi
     
     # Make executable on router

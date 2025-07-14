@@ -47,9 +47,11 @@ version `GLIBC_2.33' not found
 
 LibreRouter v1 devices with firmware older than version 1.5 have several limitations:
 - Require legacy SSH key algorithms: `-oHostKeyAlgorithms=+ssh-rsa`
-- No sftp-server support (only scp works)
+- No sftp-server support (SCP and SFTP both fail)
 - Limited resources for direct firmware downloads
 - Outdated safe-upgrade script
+
+**Note**: Both SCP and SFTP fail with error: `ash: /usr/libexec/sftp-server: not found`
 
 ### Automated Solution
 
@@ -66,9 +68,15 @@ Use the automated upgrade script for complete firmware update:
 **What the script does:**
 1. Downloads latest safe-upgrade from LibreMesh repository
 2. Creates backup of router configuration
-3. Transfers safe-upgrade using legacy SSH/SCP compatibility
+3. Transfers safe-upgrade using alternative methods (no SCP/SFTP required)
 4. Executes firmware upgrade safely
 5. Waits for reboot and verifies completion
+
+**Transfer methods used (in order of preference):**
+- HTTP server + wget (if router has wget)
+- Base64 encoding via SSH  
+- Hex encoding via SSH (for small files)
+- Chunked transfer for large files
 
 ### Manual safe-upgrade Update Only
 
@@ -77,6 +85,41 @@ If you only need to update the safe-upgrade script:
 ```bash
 # Quick safe-upgrade update only
 ./scripts/utils/update-safe-upgrade.sh thisnode.info
+```
+
+### Alternative File Transfer Methods
+
+Since SCP/SFTP don't work on legacy routers, use these alternative methods:
+
+#### Method 1: HTTP Server + wget (Recommended)
+```bash
+# 1. Start HTTP server on PC
+cd /path/to/file/directory
+python3 -m http.server 8765
+
+# 2. Download on router (if wget available)
+ssh -oHostKeyAlgorithms=+ssh-rsa root@thisnode.info
+wget -O /tmp/safe-upgrade http://YOUR_PC_IP:8765/safe-upgrade
+```
+
+#### Method 2: Base64 Encoding via SSH
+```bash
+# 1. Encode file on PC
+base64 safe-upgrade > safe-upgrade.b64
+
+# 2. Transfer and decode on router
+ssh -oHostKeyAlgorithms=+ssh-rsa root@thisnode.info
+cat > /tmp/safe-upgrade.b64
+# Paste base64 content, then Ctrl+D
+
+base64 -d /tmp/safe-upgrade.b64 > /tmp/safe-upgrade
+rm /tmp/safe-upgrade.b64
+```
+
+#### Method 3: Automated Transfer Script
+```bash
+# Use the automated transfer script
+./scripts/transfer-to-legacy-router.sh thisnode.info safe-upgrade /usr/sbin/safe-upgrade
 ```
 
 ### Manual Process (for reference)
@@ -92,16 +135,14 @@ wget -O safe-upgrade https://raw.githubusercontent.com/libremesh/lime-packages/r
 chmod +x safe-upgrade
 ```
 
-**Step 3: Transfer using SCP (not sftp)**
-```bash
-scp -oHostKeyAlgorithms=+ssh-rsa safe-upgrade root@thisnode.info:/tmp/
-```
+**Step 3: Transfer using alternative methods**
+Use one of the methods described above (HTTP, base64, or transfer script)
 
 **Step 4: Install and run on router**
 ```bash
 ssh -oHostKeyAlgorithms=+ssh-rsa root@thisnode.info
+chmod +x /tmp/safe-upgrade
 mv /tmp/safe-upgrade /usr/sbin/safe-upgrade
-chmod +x /usr/sbin/safe-upgrade
 safe-upgrade -n  # Non-interactive upgrade
 ```
 
@@ -118,7 +159,10 @@ Unable to negotiate with router: no matching host key type found
 ash: /usr/libexec/sftp-server: not found
 scp: Connection closed
 ```
-*Solution*: Use SCP with legacy SSH options instead of SFTP
+*Solution*: Both SCP and SFTP fail on legacy routers. Use alternative transfer methods:
+- HTTP server + wget (recommended)
+- Base64 encoding via SSH
+- Automated transfer script: `./scripts/transfer-to-legacy-router.sh`
 
 **Router Not Responding After Upgrade**
 - Wait 5-10 minutes for complete reboot
