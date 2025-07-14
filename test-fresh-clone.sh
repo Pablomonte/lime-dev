@@ -98,8 +98,16 @@ for repo in "${REPOS[@]}"; do
     fi
 done
 
+# Test AI tools dependencies
+echo -e "\n${YELLOW}Step 7: Testing AI tools dependencies...${NC}"
+if ./tools/ai/install-dependencies.sh &>/dev/null; then
+    log_result "✓ AI dependencies installed successfully"
+else
+    log_result "✗ AI dependencies installation failed"
+fi
+
 # Test build command (dry run)
-echo -e "\n${YELLOW}Step 7: Testing build system...${NC}"
+echo -e "\n${YELLOW}Step 8: Testing build system...${NC}"
 if ./lime build --help &>/dev/null; then
     log_result "✓ Build system accessible"
 else
