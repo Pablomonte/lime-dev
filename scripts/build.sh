@@ -37,6 +37,7 @@ Targets:
 Options:
     --download-only     Download dependencies only (no build)
     --shell            Open interactive shell (docker method only)
+    --local-lime-app    Build using local lime-app repository
     --clean            Clean build environment
     -h, --help         Show this help
 
@@ -45,6 +46,7 @@ Examples:
     $0 native librerouter-v1        # Explicit native build
     $0 docker librerouter-v1        # Docker build
     $0 native --download-only       # Download dependencies only
+    $0 --local-lime-app             # Build with local lime-app
     $0 docker --shell               # Open Docker shell
     $0 --clean                      # Clean all build artifacts
 
@@ -72,11 +74,21 @@ check_setup() {
 native_build() {
     local target="$1"
     local download_only="$2"
+    local local_lime_app="$3"
     
     print_info "Native LibreRouterOS build for $target"
     
+    local env_vars=""
     if [[ "$download_only" == "true" ]]; then
-        BUILD_DOWNLOAD_ONLY=true exec "$SCRIPT_DIR/core/librerouteros-wrapper.sh" "$target"
+        env_vars="BUILD_DOWNLOAD_ONLY=true"
+    fi
+    
+    if [[ "$local_lime_app" == "true" ]]; then
+        env_vars="$env_vars LOCAL_LIME_APP=true"
+    fi
+    
+    if [[ -n "$env_vars" ]]; then
+        env $env_vars "$SCRIPT_DIR/core/librerouteros-wrapper.sh" "$target"
     else
         exec "$SCRIPT_DIR/core/librerouteros-wrapper.sh" "$target"
     fi
@@ -86,15 +98,33 @@ docker_build() {
     local target="$1"
     local download_only="$2"
     local shell_mode="$3"
+    local local_lime_app="$4"
     
     print_info "Docker LibreRouterOS build for $target"
     
+    local env_vars=""
+    if [[ "$local_lime_app" == "true" ]]; then
+        env_vars="LOCAL_LIME_APP=true"
+    fi
+    
     if [[ "$shell_mode" == "true" ]]; then
-        exec "$SCRIPT_DIR/core/docker-build.sh" --shell
+        if [[ -n "$env_vars" ]]; then
+            env $env_vars "$SCRIPT_DIR/core/docker-build.sh" --shell
+        else
+            exec "$SCRIPT_DIR/core/docker-build.sh" --shell
+        fi
     elif [[ "$download_only" == "true" ]]; then
-        exec "$SCRIPT_DIR/core/docker-build.sh" --download-only "$target"
+        if [[ -n "$env_vars" ]]; then
+            env $env_vars "$SCRIPT_DIR/core/docker-build.sh" --download-only "$target"
+        else
+            exec "$SCRIPT_DIR/core/docker-build.sh" --download-only "$target"
+        fi
     else
-        exec "$SCRIPT_DIR/core/docker-build.sh" "$target"
+        if [[ -n "$env_vars" ]]; then
+            env $env_vars "$SCRIPT_DIR/core/docker-build.sh" "$target"
+        else
+            exec "$SCRIPT_DIR/core/docker-build.sh" "$target"
+        fi
     fi
 }
 
@@ -123,6 +153,7 @@ main() {
     local download_only="false"
     local shell_mode="false"
     local clean_mode="false"
+    local local_lime_app="false"
     
     # Parse arguments
     while [[ $# -gt 0 ]]; do
@@ -141,6 +172,10 @@ main() {
                 ;;
             --shell)
                 shell_mode="true"
+                shift
+                ;;
+            --local-lime-app)
+                local_lime_app="true"
                 shift
                 ;;
             --clean)
@@ -178,10 +213,10 @@ main() {
     
     case "$method" in
         native)
-            native_build "$target" "$download_only"
+            native_build "$target" "$download_only" "$local_lime_app"
             ;;
         docker)
-            docker_build "$target" "$download_only" "$shell_mode"
+            docker_build "$target" "$download_only" "$shell_mode" "$local_lime_app"
             ;;
         *)
             print_error "Unknown build method: $method"

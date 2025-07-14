@@ -44,6 +44,7 @@ Build Commands:
     lime build                          # Native build (default target)
     lime build docker librerouter-v1    # Docker build 
     lime build native --download-only   # Download dependencies only
+    lime build --local-lime-app         # Build using local lime-app repo
     lime build --clean                  # Clean build environment
 
 Verification Commands:
@@ -75,6 +76,7 @@ Examples:
     lime verify all                    # Verify complete environment
     lime ai review --repo lime-app     # Code review for lime-app
     lime build                         # Build firmware
+    lime build --local-lime-app        # Build with local lime-app
     lime qemu start                     # Start development QEMU
     lime upstream setup                # Setup upstream workflow
 
