@@ -48,52 +48,70 @@ git clone <your-lime-dev-repo>
 cd lime-dev
 
 # Set up complete development environment
-./scripts/lime setup install
+./lime setup install
 
-# Verify environment
-./scripts/lime verify all
+# Verify environment  
+./lime verify all
 
 # Build firmware
-./scripts/lime build
+./lime build
+```
+
+### System-Wide Installation (Optional)
+
+For global access to the `lime` command from anywhere:
+
+```bash
+# Install lime system-wide (requires sudo)
+sudo ./install-system-lime.sh
+
+# Or install to user directory
+./install-system-lime.sh ~/.local/bin
+
+# Now use lime from anywhere
+cd ~/Documents
+lime --help                          # Works globally
+lime ai review --repo lime-app       # Full functionality
+lime verify all                      # Complete features
 ```
 
 ### Code Analysis
 
 ```bash
 # Code review for all repositories
-./scripts/lime ai review --repo all
+./lime ai review --repo all
 
 # Security scan
-./scripts/lime ai security --repo all
+./lime ai security --repo all
 
 # Documentation validation
-./scripts/lime ai docs --repo lime-app
+./lime ai docs --repo lime-app
 
 # Quality assessment
-./scripts/lime ai quality --repo lime-packages --verbose
+./lime ai quality --repo lime-packages --verbose
 ```
 
 ### QEMU Development
 
 ```bash
 # Start QEMU mesh simulation
-./scripts/lime qemu start
+./lime qemu start
 
 # Access lime-app at http://10.13.0.1/app/
 # Make changes, then:
 
 # Stop QEMU environment
-./scripts/lime qemu stop
+./lime qemu stop
 ```
 
 ### Upstream Contribution
 
 ```bash
 # Configure upstream remotes and git aliases
-./scripts/lime upstream setup all
+./lime upstream setup all
 
 # Show available git aliases
-./scripts/lime upstream aliases lime-app
+./lime upstream aliases lime-app
 ```
 
 ## Main CLI Interface
