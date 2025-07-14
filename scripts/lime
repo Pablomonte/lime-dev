@@ -31,6 +31,7 @@ Main Commands:
     ai              AI-powered development tools
     upstream        Upstream contribution management
     qemu            QEMU virtualization management
+    upgrade         Upgrade legacy LibreRouter v1 firmware
     update          Update repositories
     clean           Clean build artifacts
 
@@ -70,12 +71,17 @@ QEMU Management:
     lime qemu status                    # Check QEMU status
     lime qemu dev-cycle                 # Development workflow
 
+Router Upgrade:
+    lime upgrade thisnode.info         # Upgrade legacy LibreRouter v1
+    lime upgrade 192.168.1.1          # Upgrade router at specific IP
+
 Examples:
     lime setup install                 # Initial setup
     lime verify all                    # Verify complete environment
     lime ai review --repo lime-app     # Code review for lime-app
     lime build                         # Build firmware
     lime qemu start                     # Start development QEMU
+    lime upgrade thisnode.info         # Upgrade legacy router firmware
     lime upstream setup                # Setup upstream workflow
 
 Directory Structure:
@@ -331,6 +337,10 @@ main() {
             ;;
         clean)
             exec "$SCRIPT_DIR/build.sh" --clean
+            ;;
+        upgrade)
+            shift
+            exec "$SCRIPT_DIR/upgrade-legacy-router.sh" "$@"
             ;;
         help|-h|--help)
             usage
