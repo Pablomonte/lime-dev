@@ -1,6 +1,6 @@
-# LibreRouterOS Build Troubleshooting
+# LibreMesh Development Environment Troubleshooting
 
-## Common Issues
+## Common Build Issues
 
 ### Docker Permission Errors
 ```
@@ -25,171 +25,151 @@ version `GLIBC_2.33' not found
 **Solution**: Ensure OpenWrt repository is available for script copying
 
 ### Build Failures
-- Check logs with `./monitor-build.sh logs`
+- Check logs with `./lime build --clean`
 - Verify target repository is valid OpenWrt
 - Ensure sufficient disk space (20GB+)
 - Check memory availability (4GB+)
 
-## Build Monitoring
-- Real-time: `./monitor-build.sh start`
-- Logs: `./monitor-build.sh logs`
-- Status: `./monitor-build.sh status`
+## LibreRouter v1 Legacy safe-upgrade Update
 
-## Performance Tuning
-- Adjust job count: `BUILD_JOBS=8 ./build-librerouteros.sh ...`
-- Use cache directory: `DOWNLOAD_DIR=/cache ./build-librerouteros.sh ...`
+### LibreRouter v1 Legacy Issues
 
+**Problem**: LibreRouter v1 (pre-1.5 firmware) cannot upgrade firmware normally.
 
-
-## LibreRouter v1 Legacy Firmware Upgrade
-
-### Problem: Outdated LibreRouter v1 (pre-1.5 firmware)
-
-LibreRouter v1 devices with firmware older than version 1.5 have several limitations:
-- Require legacy SSH key algorithms: `-oHostKeyAlgorithms=+ssh-rsa`
-- No sftp-server support (SCP and SFTP both fail)
-- Limited resources for direct firmware downloads
-- Outdated safe-upgrade script
-
-**Note**: Both SCP and SFTP fail with error: `ash: /usr/libexec/sftp-server: not found`
-
-### Automated Solution
-
-Use the automated upgrade script for complete firmware update:
-
+**Solution**: Update safe-upgrade script first:
 ```bash
-# Full automated upgrade (recommended)
-./scripts/upgrade-legacy-router.sh thisnode.info
-
-# Or with specific IP
-./scripts/upgrade-legacy-router.sh 192.168.1.1
+./lime upgrade
 ```
 
-**What the script does:**
-1. Downloads latest safe-upgrade from LibreMesh repository
-2. Creates backup of router configuration
-3. Transfers safe-upgrade using alternative methods (no SCP/SFTP required)
-4. Executes firmware upgrade safely
-5. Waits for reboot and verifies completion
+**Common Issues:**
 
-**Transfer methods used (in order of preference):**
-- HTTP server + wget (if router has wget)
-- Base64 encoding via SSH  
-- Hex encoding via SSH (for small files)
-- Chunked transfer for large files
-
-### Manual safe-upgrade Update Only
-
-If you only need to update the safe-upgrade script:
-
-```bash
-# Quick safe-upgrade update only
-./scripts/utils/update-safe-upgrade.sh thisnode.info
-```
-
-### Alternative File Transfer Methods
-
-Since SCP/SFTP don't work on legacy routers, use these alternative methods:
-
-#### Method 1: HTTP Server + wget (Recommended)
-```bash
-# 1. Start HTTP server on PC
-cd /path/to/file/directory
-python3 -m http.server 8765
-
-# 2. Download on router (if wget available)
-ssh -oHostKeyAlgorithms=+ssh-rsa root@thisnode.info
-wget -O /tmp/safe-upgrade http://YOUR_PC_IP:8765/safe-upgrade
-```
-
-#### Method 2: Base64 Encoding via SSH
-```bash
-# 1. Encode file on PC
-base64 safe-upgrade > safe-upgrade.b64
-
-# 2. Transfer and decode on router
-ssh -oHostKeyAlgorithms=+ssh-rsa root@thisnode.info
-cat > /tmp/safe-upgrade.b64
-# Paste base64 content, then Ctrl+D
-
-base64 -d /tmp/safe-upgrade.b64 > /tmp/safe-upgrade
-rm /tmp/safe-upgrade.b64
-```
-
-#### Method 3: Automated Transfer Script
-```bash
-# Use the automated transfer script
-./scripts/transfer-to-legacy-router.sh thisnode.info safe-upgrade /usr/sbin/safe-upgrade
-```
-
-### Manual Process (for reference)
-
-**Step 1: Connect with legacy SSH**
-```bash
-ssh -oHostKeyAlgorithms=+ssh-rsa root@thisnode.info
-```
-
-**Step 2: Download safe-upgrade on PC**
-```bash
-wget -O safe-upgrade https://raw.githubusercontent.com/libremesh/lime-packages/refs/heads/master/packages/safe-upgrade/files/usr/sbin/safe-upgrade
-chmod +x safe-upgrade
-```
-
-**Step 3: Transfer using alternative methods**
-Use one of the methods described above (HTTP, base64, or transfer script)
-
-**Step 4: Install and run on router**
-```bash
-ssh -oHostKeyAlgorithms=+ssh-rsa root@thisnode.info
-chmod +x /tmp/safe-upgrade
-mv /tmp/safe-upgrade /usr/sbin/safe-upgrade
-safe-upgrade -n  # Non-interactive upgrade
-```
-
-### Common Issues and Solutions
-
-**SSH Connection Rejected**
+*SSH Connection Rejected*
 ```
 Unable to negotiate with router: no matching host key type found
 ```
-*Solution*: Use legacy algorithm: `ssh -oHostKeyAlgorithms=+ssh-rsa`
+Fix: `ssh -oHostKeyAlgorithms=+ssh-rsa root@thisnode.info`
 
-**SCP/SFTP Not Working**
+*SCP/SFTP Not Working*
 ```
 ash: /usr/libexec/sftp-server: not found
-scp: Connection closed
 ```
-*Solution*: Both SCP and SFTP fail on legacy routers. Use alternative transfer methods:
-- HTTP server + wget (recommended)
-- Base64 encoding via SSH
-- Automated transfer script: `./scripts/transfer-to-legacy-router.sh`
+Fix: Expected on legacy routers - script uses hex transfer instead.
 
-**Router Not Responding After Upgrade**
-- Wait 5-10 minutes for complete reboot
-- Check power connection
-- Try factory reset if necessary (30-30-30 method)
+*Router Not Found*
+- Try: `thisnode.info`, `10.13.0.1`, `192.168.1.1`
+- Default password: `toorlibre1`
+- Connect to router's WiFi first
 
-**Backup Recovery**
-If upgrade fails, restore from backup:
+## QEMU Development Issues
+
+### QEMU Not Starting
+- Check KVM is available: `kvm-ok`
+- Verify user in kvm group: `groups | grep kvm`
+- Ensure bridge interfaces exist
+- Check image files are present in `repos/lime-packages/build/`
+
+### Network Issues in QEMU
+- Verify bridge interface: `ip addr show lime_br0`
+- Check TAP interfaces: `ip addr show | grep lime_tap`
+- Reset network: `sudo ip link delete lime_br0 2>/dev/null || true`
+
+### LibreRouterOS Kernel Boot Issues
+- Uses kernel 6.6.86 which requires specific boot parameters
+- Handled automatically by `qemu_dev_start_librerouteros`
+- If issues persist, try LibreMesh image instead
+
+## Build System Issues
+
+### Cross-Platform Compatibility
+- **Ubuntu/Debian**: Full support
+- **RHEL/CentOS/Fedora**: Supported via yum/dnf
+- **Arch Linux**: Supported via pacman
+- **macOS**: Limited QEMU performance
+
+### Dependency Installation
 ```bash
-# Extract backup made by upgrade script
-tar -xzf cache/router-upgrade/backups/router_backup_*.tar.gz
-# Transfer back to router when accessible
+# Check setup status
+./lime verify all
+
+# Install missing dependencies
+./lime setup install
 ```
 
-### Prerequisites
+### Cache and Storage
+- Build cache: `cache/` directory (can be large)
+- Logs: `logs/` directory
+- Clean cache: `./lime clean`
+- Check disk space: `df -h`
 
-- SSH client with legacy algorithm support
-- SCP capability (part of OpenSSH)
-- Internet connection for firmware download
-- Router accessible on network
+## Getting Help
 
-### Verification
-
-After successful upgrade, verify with:
+### Environment Verification
 ```bash
-ssh root@thisnode.info "cat /etc/banner"
+# Check complete environment
+./lime verify all
+
+# Check specific components
+./lime verify platform    # Platform-specific checks
+./lime verify qemu        # QEMU environment
+./lime verify repos       # Repository integrity
 ```
 
-Should show updated LibreMesh version and build date.
+### Reset Environment
+```bash
+# Clean build artifacts
+./lime clean
 
+# Reset repositories
+./lime update
+
+# Complete setup verification
+./lime setup check
+```
+
+### Advanced Debugging
+```bash
+# Verbose build output
+export V=s
+./lime build configs/example_config_x86_64
+
+# Check specific package build
+cd repos/librerouteros
+make package/lime-system/compile V=s
+```
+
+## Performance Optimization
+
+### Build Performance
+- Use all CPU cores: `export JOBS=$(nproc)`
+- Limit cores: `export JOBS=4`
+- Use cache directory: `export DOWNLOAD_DIR=/cache`
+
+### Memory Requirements
+- Minimum: 4GB RAM
+- Recommended: 8GB+ RAM
+- Disk space: 20GB+ free space
+
+### Network Performance
+- QEMU uses bridge interfaces for networking
+- Performance may vary based on host network configuration
+- Use wired connection for best QEMU performance
+
+## System Requirements
+
+### Host System
+- Linux preferred (Ubuntu 20.04+ recommended)
+- macOS supported (limited performance)
+- Windows via WSL2 (experimental)
+
+### Required Tools
+- Git
+- Docker (optional but recommended)
+- SSH client
+- sshpass (for legacy router updates)
+- QEMU (for development)
+- Standard build tools (gcc, make, etc.)
+
+### Network Access
+- Internet connection for downloading packages
+- Access to GitHub for repository cloning
+- SSH access to target routers (for legacy updates)

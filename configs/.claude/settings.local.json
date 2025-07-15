@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C /home/fede/REPOS/lime-dev branch -a)",
+      "Bash(git -C /home/fede/REPOS/lime-dev log --oneline --graph --all --decorate -20)",
+      "Bash(git -C /home/fede/REPOS/lime-dev show --stat fork/main)",
+      "Bash(git -C /home/fede/REPOS/lime-dev diff origin/main..fork/main)",
+      "Bash(grep:*)",
+      "Bash(./scripts/lime:*)"
+    ],
+    "deny": []
+  }
+}

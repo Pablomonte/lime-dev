@@ -31,7 +31,7 @@ Main Commands:
     ai              AI-powered development tools
     upstream        Upstream contribution management
     qemu            QEMU virtualization management
-    upgrade         Upgrade legacy LibreRouter v1 firmware
+    upgrade         Unified legacy router upgrade (safe-upgrade + optional firmware)
     update          Update repositories
     clean           Clean build artifacts
 
@@ -71,9 +71,11 @@ QEMU Management:
     lime qemu status                    # Check QEMU status
     lime qemu dev-cycle                 # Development workflow
 
-Router Upgrade:
-    lime upgrade thisnode.info         # Upgrade legacy LibreRouter v1
-    lime upgrade 192.168.1.1          # Upgrade router at specific IP
+Legacy Router Update:
+    lime upgrade                       # Update safe-upgrade only (thisnode.info)
+    lime upgrade firmware.bin          # Update safe-upgrade + firmware upgrade  
+    lime upgrade 10.13.0.1            # Update safe-upgrade on specific IP
+    lime upgrade 10.13.0.1 firmware.bin    # Complete upgrade on specific router
 
 Examples:
     lime setup install                 # Initial setup
@@ -81,7 +83,8 @@ Examples:
     lime ai review --repo lime-app     # Code review for lime-app
     lime build                         # Build firmware
     lime qemu start                     # Start development QEMU
-    lime upgrade thisnode.info         # Upgrade legacy router firmware
+    lime upgrade                       # Update safe-upgrade only (thisnode.info)
+    lime upgrade firmware.bin          # Update safe-upgrade + firmware
     lime upstream setup                # Setup upstream workflow
 
 Directory Structure:
@@ -300,6 +303,7 @@ EOF
     esac
 }
 
+
 main() {
     local command="${1:-help}"
     
@@ -340,7 +344,8 @@ main() {
             ;;
         upgrade)
             shift
-            exec "$SCRIPT_DIR/upgrade-legacy-router.sh" "$@"
+            # Use unified upgrade script
+            exec "$SCRIPT_DIR/core/upgrade-legacy-router.sh" "$@"
             ;;
         help|-h|--help)
             usage
