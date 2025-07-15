@@ -264,10 +264,11 @@ run_qemu_command() {
     shift || true
     
     case "$qemu_command" in
-        start|stop|status)
-            # Delegate to existing lime-app qemu tools for now
-            if [[ -d "$LIME_DEV_ROOT/repos/lime-app" && -x "$LIME_DEV_ROOT/repos/lime-app/scripts/qemu-manager.sh" ]]; then
-                exec "$LIME_DEV_ROOT/repos/lime-app/scripts/qemu-manager.sh" "$qemu_command" "$@"
+        start|stop|status|restart|deploy|console)
+            # Use standalone QEMU manager (moved out of lime-app)
+            if [[ -x "$LIME_DEV_ROOT/tools/qemu/qemu-manager.sh" ]]; then
+                cd "$LIME_DEV_ROOT/tools/qemu"
+                exec "./qemu-manager.sh" "$qemu_command" "$@"
             else
                 print_error "QEMU tools not available. Run 'lime setup install' first."
                 exit 1
@@ -288,14 +289,19 @@ QEMU Management
 Usage: lime qemu <command> [options]
 
 Commands:
-    start       Start QEMU environment
-    stop        Stop QEMU environment  
-    status      Check QEMU status
+    start       Start LibreMesh QEMU environment
+    stop        Stop LibreMesh QEMU environment  
+    restart     Restart LibreMesh QEMU environment
+    status      Check QEMU status and connectivity
+    deploy      Build and deploy lime-app to QEMU
+    console     Connect to QEMU console (telnet)
     dev-cycle   Development workflow (WIP)
 
 Examples:
     lime qemu start
     lime qemu status
+    lime qemu console
+    lime qemu deploy
     lime qemu stop
 EOF
             ;;
