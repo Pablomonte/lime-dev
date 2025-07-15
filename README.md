@@ -7,8 +7,8 @@ A comprehensive development environment for LibreMesh ecosystem projects. Provid
 Lime-Dev solves common LibreMesh development challenges:
 
 - **Firmware Building**: Native and Docker-based LibreRouterOS compilation
-- **Legacy Router Support**: Updates outdated LibreRouter v1 devices for modern firmware upgrades
-- **QEMU Development**: Virtualized testing environment for lime-app development
+- **LibreRouter v1 Support**: Upgrade utility for LibreRouter v1 devices (pre-1.5 firmware)
+- **lime-app Development**: Complete framework for LibreMesh web interface development with QEMU integration
 - **Cross-Platform Setup**: Automated environment configuration across Linux distributions
 - **Build Automation**: Consistent, reproducible firmware builds with proper dependency management
 
@@ -26,8 +26,8 @@ Lime-Dev solves common LibreMesh development challenges:
 - Support for both LibreMesh and LibreRouterOS images
 - Development workflow automation
 
-### 🔄 Legacy Router Rescue
-- Updates safe-upgrade script on LibreRouter v1 (pre-1.5 firmware)
+### 🔄 LibreRouter v1 Support
+- LibreRouter v1 upgrade utility for safe-upgrade and firmware updates
 - Enables web-based firmware upgrades on legacy devices
 - Handles SSH legacy algorithms and SCP/SFTP limitations
 - Automated backup and verification
@@ -65,6 +65,21 @@ cd lime-dev
 ./lime build docker librerouter-v1
 ```
 
+### lime-app Development
+
+```bash
+# Start QEMU development environment
+./lime qemu start
+
+# Develop and deploy lime-app
+cd repos/lime-app
+npm install
+npm run dev              # Development server
+./dev.sh deploy          # Deploy to QEMU router
+
+# Test at: http://10.13.0.1/app/
+```
+
 ### QEMU Development
 
 ```bash
@@ -77,11 +92,14 @@ cd lime-dev
 # Access at http://10.13.0.1/app/
 ```
 
-### Legacy Router Support
+### LibreRouter v1 Upgrade Utility
 
 ```bash
-# Update safe-upgrade on legacy LibreRouter v1
+# Update safe-upgrade on LibreRouter v1 (pre-1.5 firmware)
 ./lime upgrade thisnode.info
+
+# Complete firmware upgrade
+./lime upgrade 10.13.0.1 firmware.bin
 
 # With custom password
 ./lime upgrade 10.13.0.1 -p mypassword
@@ -97,10 +115,10 @@ lime-dev/
 │   ├── lime              # Main CLI interface
 │   ├── build.sh          # Build management
 │   ├── setup.sh          # Environment setup
-│   ├── update-legacy-safe-upgrade.sh  # Legacy router support
-│   ├── transfer-legacy-hex.sh         # Hex file transfer
 │   ├── core/             # Core functionality
+│   │   └── upgrade-legacy-router.sh  # Legacy router support
 │   └── utils/            # Utility scripts
+│       └── transfer-legacy-hex.sh    # Hex file transfer
 ├── repos/                # Managed source repositories
 │   ├── librerouteros/    # LibreRouterOS firmware source
 │   ├── lime-app/         # LibreMesh web interface

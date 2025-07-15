@@ -123,7 +123,7 @@ get_router_password() {
 
 usage() {
     cat << EOF
-LibreRouter Legacy Upgrade System
+LibreRouter v1 Upgrade Utility
 
 🚀 Fast HTTP upload with automatic safe-upgrade management
 🛡️  Safe dual-boot system with automatic revert capability
@@ -823,7 +823,7 @@ main() {
     
     trap cleanup_ssh EXIT
     
-    echo "LibreRouter Legacy Upgrade System"
+    echo "LibreRouter v1 Upgrade Utility"
     echo "=================================="
     print_info "Target router: $ROUTER_IP"
     if [[ -n "$FIRMWARE_FILE" ]]; then
@@ -875,7 +875,7 @@ main() {
         # Show completion summary
         firmware_upgrade_summary
         
-        print_success "🎉 Legacy LibreRouter v1 successfully rescued and upgraded!"
+        print_success "🎉 LibreRouter v1 upgrade completed successfully!"
         print_info "📡 Router is online with modern firmware - confirmation pending"
         print_warning "⚠️  IMPORTANT: Complete confirmation to make upgrade permanent"
         print_info "🌐 Access router now: http://$ROUTER_IP"
@@ -889,7 +889,7 @@ main() {
         print_info "• Download firmware: https://downloads.libremesh.org/"
         print_info "• Look for: librerouter-v1-*-sysupgrade.bin"
         print_info ""
-        print_success "Legacy router is ready for modern firmware upgrade!"
+        print_success "Router is ready for firmware upgrade!"
     fi
 }
 

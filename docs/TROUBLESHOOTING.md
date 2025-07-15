@@ -30,9 +30,9 @@ version `GLIBC_2.33' not found
 - Ensure sufficient disk space (20GB+)
 - Check memory availability (4GB+)
 
-## LibreRouter v1 Legacy safe-upgrade Update
+## LibreRouter v1 Upgrade Utility
 
-### LibreRouter v1 Legacy Issues
+### LibreRouter v1 Issues
 
 **Problem**: LibreRouter v1 (pre-1.5 firmware) cannot upgrade firmware normally.
 

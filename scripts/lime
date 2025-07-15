@@ -31,7 +31,7 @@ Main Commands:
     ai              AI-powered development tools
     upstream        Upstream contribution management
     qemu            QEMU virtualization management
-    upgrade         Unified legacy router upgrade (safe-upgrade + optional firmware)
+    upgrade         LibreRouter v1 upgrade utility (safe-upgrade + optional firmware)
     update          Update repositories
     clean           Clean build artifacts
 
