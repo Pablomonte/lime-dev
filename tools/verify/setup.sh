@@ -156,11 +156,15 @@ check_qemu_virtualization() {
             add_result "warn" "KVM" "/dev/kvm not available (performance impact)"
         fi
         
-        # Check if user is in kvm group
+        # Check if user is in kvm group or can access KVM via sudo
         if groups | grep -q "kvm"; then
             add_result "pass" "KVM Group" "User in kvm group"
+        elif [[ -r /dev/kvm && -w /dev/kvm ]]; then
+            add_result "pass" "KVM Access" "User can access KVM device directly"
+        elif sudo -n test -r /dev/kvm -a -w /dev/kvm 2>/dev/null; then
+            add_result "pass" "KVM Access" "User can access KVM via sudo"
         else
-            add_result "warn" "KVM Group" "User not in kvm group (may need sudo)"
+            add_result "warn" "KVM Group" "User not in kvm group (may need sudo or group membership)"
         fi
     fi
     

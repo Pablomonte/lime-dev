@@ -31,6 +31,7 @@ Commands:
     check           Check current setup status (non-invasive)
     install         Full setup with user confirmation (safe)
     install-auto    Automated setup (use with caution)
+    install-system  Install lime command system-wide via symlink
     update          Update repositories only
     deps            Check/install system dependencies
     env             Show environment information
@@ -81,6 +82,10 @@ main() {
                 command="install-auto"
                 shift
                 ;;
+            install-system)
+                command="install-system"
+                shift
+                ;;
             update)
                 command="update"
                 shift
@@ -128,6 +133,36 @@ main() {
         install-auto)
             print_info "Running automated setup (potentially disruptive)"
             exec "$SCRIPT_DIR/legacy/setup-lime-dev.sh"
+            ;;
+        install-system)
+            print_info "Installing lime command system-wide..."
+            local lime_script="$SCRIPT_DIR/lime"
+            local system_lime="/usr/local/bin/lime"
+            
+            if [[ ! -f "$lime_script" ]]; then
+                print_error "Local lime script not found: $lime_script"
+                exit 1
+            fi
+            
+            if [[ -L "$system_lime" ]]; then
+                local current_target=$(readlink -f "$system_lime")
+                local expected_target=$(readlink -f "$lime_script")
+                
+                if [[ "$current_target" == "$expected_target" ]]; then
+                    print_success "System-wide lime already correctly linked"
+                    exit 0
+                else
+                    print_info "Updating system-wide lime symlink..."
+                    sudo rm "$system_lime"
+                fi
+            elif [[ -f "$system_lime" ]]; then
+                print_info "Replacing existing system lime with symlink..."
+                sudo rm "$system_lime"
+            fi
+            
+            sudo ln -s "$lime_script" "$system_lime"
+            print_success "Installed lime system-wide via symlink"
+            print_info "You can now run 'lime' from anywhere"
             ;;
         update)
             exec "$SCRIPT_DIR/utils/update-repos.sh"

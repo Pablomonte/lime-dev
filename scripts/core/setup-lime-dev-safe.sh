@@ -271,6 +271,54 @@ safe_setup_system() {
     done
 }
 
+# Safe system-wide installation
+safe_install_system_wide() {
+    print_info "Checking system-wide installation..."
+    
+    local lime_script="$LIME_BUILD_DIR/scripts/lime"
+    local system_lime="/usr/local/bin/lime"
+    
+    if [[ ! -f "$lime_script" ]]; then
+        print_warning "Local lime script not found: $lime_script"
+        return 0
+    fi
+    
+    # Check if system lime exists and what it points to
+    if [[ -L "$system_lime" ]]; then
+        local current_target=$(readlink -f "$system_lime")
+        local expected_target=$(readlink -f "$lime_script")
+        
+        if [[ "$current_target" == "$expected_target" ]]; then
+            print_success "System-wide lime already correctly linked"
+            return 0
+        else
+            print_warning "System lime points to different location:"
+            print_warning "  Current: $current_target"
+            print_warning "  Expected: $expected_target"
+            
+            if ask_user "Update system-wide lime symlink?"; then
+                sudo rm "$system_lime"
+                sudo ln -s "$lime_script" "$system_lime"
+                print_success "Updated system-wide lime symlink"
+            fi
+        fi
+    elif [[ -f "$system_lime" ]]; then
+        print_warning "System lime exists as regular file (not symlink)"
+        if ask_user "Replace with symlink to local development version?"; then
+            sudo rm "$system_lime"
+            sudo ln -s "$lime_script" "$system_lime"
+            print_success "Replaced system lime with symlink"
+        fi
+    else
+        print_info "No system-wide lime installation found"
+        if ask_user "Install lime system-wide via symlink?"; then
+            sudo ln -s "$lime_script" "$system_lime"
+            print_success "Installed lime system-wide via symlink"
+            print_info "You can now run 'lime' from anywhere"
+        fi
+    fi
+}
+
 # Show environment information
 show_environment_info() {
     print_info "Environment Information:"
@@ -287,6 +335,7 @@ show_environment_info() {
     echo "  - Check system dependencies (install with permission)"
     echo "  - Clone/update repositories (with confirmation)"
     echo "  - Set up system configuration (with permission)"
+    echo "  - Install lime command system-wide via symlink (with permission)"
     echo "  - Preserve existing work and local changes"
     print_info ""
     
@@ -306,6 +355,7 @@ main() {
     check_dependencies
     safe_clone_repositories
     safe_setup_system
+    safe_install_system_wide
     
     print_success "Safe setup completed!"
     echo ""

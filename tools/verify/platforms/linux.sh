@@ -41,12 +41,34 @@ detect_linux_distro() {
     if [[ -f /etc/os-release ]]; then
         . /etc/os-release
         distro="$ID"
+        
+        # Handle common derivatives
+        case "$distro" in
+            "ubuntu"|"linuxmint"|"elementary"|"zorin")
+                distro="ubuntu"
+                ;;
+            "centos"|"rocky"|"alma"|"oracle")
+                distro="rhel"
+                ;;
+            "manjaro"|"endeavouros"|"garuda")
+                distro="arch"
+                ;;
+        esac
     elif [[ -f /etc/debian_version ]]; then
         distro="debian"
     elif [[ -f /etc/redhat-release ]]; then
         distro="rhel"
     elif [[ -f /etc/arch-release ]]; then
         distro="arch"
+    elif command_exists "apt-get"; then
+        distro="ubuntu"  # Generic debian-like
+        log_info "Unknown distribution with apt-get, treating as ubuntu/debian"
+    elif command_exists "dnf" || command_exists "yum"; then
+        distro="fedora"  # Generic fedora-like
+        log_info "Unknown distribution with dnf/yum, treating as fedora/rhel"
+    elif command_exists "pacman"; then
+        distro="arch"    # Generic arch-like
+        log_info "Unknown distribution with pacman, treating as arch"
     fi
     
     log_info "Detected Linux distribution: $distro"
@@ -87,7 +109,22 @@ check_package_manager() {
             fi
             ;;
         *)
-            log_warning "Package manager: unknown distribution, cannot verify"
+            # Try to detect common package managers for unknown distributions
+            if command_exists "apt-get"; then
+                log_success "Package manager: apt-get available (generic debian-like)"
+                pm_available=true
+            elif command_exists "dnf"; then
+                log_success "Package manager: dnf available (generic fedora-like)"
+                pm_available=true
+            elif command_exists "yum"; then
+                log_success "Package manager: yum available (generic rhel-like)"
+                pm_available=true
+            elif command_exists "pacman"; then
+                log_success "Package manager: pacman available (generic arch-like)"
+                pm_available=true
+            else
+                log_warning "Package manager: unknown distribution, cannot verify"
+            fi
             ;;
     esac
     
@@ -267,12 +304,17 @@ check_qemu_setup() {
         log_warning "Virtualization: CPU may not support virtualization"
     fi
     
-    # Check if user is in kvm group
+    # Check if user is in kvm group or can access KVM via sudo
     if groups | grep -q "kvm"; then
         log_success "User groups: User in kvm group"
+    elif [[ -r /dev/kvm && -w /dev/kvm ]]; then
+        log_success "KVM Access: User can access KVM device directly"
+    elif sudo -n test -r /dev/kvm -a -w /dev/kvm 2>/dev/null; then
+        log_success "KVM Access: User can access KVM via sudo"
     else
         log_warning "User groups: User not in kvm group"
-        log_info "Add with: sudo usermod -a -G kvm \$USER"
+        log_info "Add with: sudo usermod -a -G kvm \$USER (then log out/in)"
+        log_info "Or use sudo for KVM operations"
     fi
 }
 
