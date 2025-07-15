@@ -359,7 +359,12 @@ main() {
     
     print_success "Safe setup completed!"
     echo ""
+    print_info "Repository Dependency Status After Setup:"
+    "$LIME_BUILD_DIR/scripts/utils/dependency-graph.sh" ascii
+    echo ""
     echo "Next steps:"
+    echo "  lime setup check                                     # Verify complete setup"
+    echo "  lime setup graph                                     # Detailed dependency analysis"
     echo "  ./scripts/librerouteros-wrapper.sh librerouter-v1    # Build firmware"
     echo "  ./scripts/docker-build.sh librerouter-v1            # Build with Docker"
     echo ""

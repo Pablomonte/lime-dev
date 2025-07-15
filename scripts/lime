@@ -33,13 +33,16 @@ Main Commands:
     qemu            QEMU virtualization management
     upgrade         LibreRouter v1 upgrade utility (safe-upgrade + optional firmware)
     update          Update repositories
+    deps            Show dependency graph
     clean           Clean build artifacts
 
 Setup Commands:
-    lime setup check                    # Check current status
-    lime setup install                  # Safe interactive setup  
-    lime setup install --release        # Setup for release testing
-    lime setup update                   # Update repositories only
+    lime setup check                    # Check status with dependency graph
+    lime setup install                  # Safe interactive setup with dependency analysis
+    lime setup install --release        # Setup for release testing (javierbrk repos)
+    lime setup update                   # Update repositories with dependency visualization
+    lime setup graph                    # Comprehensive dependency analysis
+    lime setup graph --export-dot       # Export professional dependency graph
 
 Build Commands:
     lime build                          # Native build (default target)
@@ -78,7 +81,8 @@ Legacy Router Update:
     lime upgrade 10.13.0.1 firmware.bin    # Complete upgrade on specific router
 
 Examples:
-    lime setup install                 # Initial setup
+    lime setup install                 # Initial setup with dependency analysis
+    lime setup graph                   # Comprehensive dependency visualization  
     lime verify all                    # Verify complete environment
     lime ai review --repo lime-app     # Code review for lime-app
     lime build                         # Build firmware
@@ -338,6 +342,9 @@ main() {
             ;;
         update)
             exec "$SCRIPT_DIR/utils/update-repos.sh"
+            ;;
+        deps)
+            exec "$SCRIPT_DIR/utils/dependency-graph.sh" ascii
             ;;
         clean)
             exec "$SCRIPT_DIR/build.sh" --clean

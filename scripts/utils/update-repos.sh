@@ -162,13 +162,17 @@ main() {
         "status"|"info")
             show_status
             ;;
+        "graph"|"deps"|"dependencies")
+            "$WORK_DIR/scripts/utils/dependency-graph.sh" ascii
+            ;;
         "help"|"-h"|"--help")
             echo "Usage: $0 [command]"
             echo ""
             echo "Commands:"
-            echo "  update, pull    Update all repositories (default)"
-            echo "  status, info    Show repository status"
-            echo "  help           Show this help"
+            echo "  update, pull       Update all repositories (default)"
+            echo "  status, info       Show repository status"
+            echo "  graph, deps        Show dependency graph"
+            echo "  help              Show this help"
             ;;
         *)
             print_error "Unknown command: $1"
