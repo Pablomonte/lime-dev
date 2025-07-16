@@ -6,7 +6,7 @@
 
 set -e
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
 LIME_DEV_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 TOOLS_DIR="$LIME_DEV_ROOT/tools"
 
@@ -31,14 +31,18 @@ Main Commands:
     ai              AI-powered development tools
     upstream        Upstream contribution management
     qemu            QEMU virtualization management
+    upgrade         LibreRouter v1 upgrade utility (safe-upgrade + optional firmware)
     update          Update repositories
+    deps            Show dependency graph
     clean           Clean build artifacts
 
 Setup Commands:
-    lime setup check                    # Check current status
-    lime setup install                  # Safe interactive setup  
-    lime setup install --release        # Setup for release testing
-    lime setup update                   # Update repositories only
+    lime setup check                    # Check status with dependency graph
+    lime setup install                  # Safe interactive setup with dependency analysis
+    lime setup install --release        # Setup for release testing (javierbrk repos)
+    lime setup update                   # Update repositories with dependency visualization
+    lime setup graph                    # Comprehensive dependency analysis
+    lime setup graph --export-dot       # Export professional dependency graph
 
 Build Commands:
     lime build                          # Native build (default target)
@@ -71,13 +75,22 @@ QEMU Management:
     lime qemu status                    # Check QEMU status
     lime qemu dev-cycle                 # Development workflow
 
+Legacy Router Update:
+    lime upgrade                       # Update safe-upgrade only (thisnode.info)
+    lime upgrade firmware.bin          # Update safe-upgrade + firmware upgrade  
+    lime upgrade 10.13.0.1            # Update safe-upgrade on specific IP
+    lime upgrade 10.13.0.1 firmware.bin    # Complete upgrade on specific router
+
 Examples:
-    lime setup install                 # Initial setup
+    lime setup install                 # Initial setup with dependency analysis
+    lime setup graph                   # Comprehensive dependency visualization  
     lime verify all                    # Verify complete environment
     lime ai review --repo lime-app     # Code review for lime-app
     lime build                         # Build firmware
     lime build --local-lime-app        # Build with local lime-app
     lime qemu start                     # Start development QEMU
+    lime upgrade                       # Update safe-upgrade only (thisnode.info)
+    lime upgrade firmware.bin          # Update safe-upgrade + firmware
     lime upstream setup                # Setup upstream workflow
 
 Directory Structure:
@@ -253,10 +266,11 @@ run_qemu_command() {
     shift || true
     
     case "$qemu_command" in
-        start|stop|status)
-            # Delegate to existing lime-app qemu tools for now
-            if [[ -d "$LIME_DEV_ROOT/repos/lime-app" && -x "$LIME_DEV_ROOT/repos/lime-app/scripts/qemu-manager.sh" ]]; then
-                exec "$LIME_DEV_ROOT/repos/lime-app/scripts/qemu-manager.sh" "$qemu_command" "$@"
+        start|stop|status|restart|deploy|console)
+            # Use standalone QEMU manager (moved out of lime-app)
+            if [[ -x "$LIME_DEV_ROOT/tools/qemu/qemu-manager.sh" ]]; then
+                cd "$LIME_DEV_ROOT/tools/qemu"
+                exec "./qemu-manager.sh" "$qemu_command" "$@"
             else
                 print_error "QEMU tools not available. Run 'lime setup install' first."
                 exit 1
@@ -277,14 +291,19 @@ QEMU Management
 Usage: lime qemu <command> [options]
 
 Commands:
-    start       Start QEMU environment
-    stop        Stop QEMU environment  
-    status      Check QEMU status
+    start       Start LibreMesh QEMU environment
+    stop        Stop LibreMesh QEMU environment  
+    restart     Restart LibreMesh QEMU environment
+    status      Check QEMU status and connectivity
+    deploy      Build and deploy lime-app to QEMU
+    console     Connect to QEMU console (telnet)
     dev-cycle   Development workflow (WIP)
 
 Examples:
     lime qemu start
     lime qemu status
+    lime qemu console
+    lime qemu deploy
     lime qemu stop
 EOF
             ;;
@@ -295,6 +314,7 @@ EOF
             ;;
     esac
 }
+
 
 main() {
     local command="${1:-help}"
@@ -331,8 +351,16 @@ main() {
         update)
             exec "$SCRIPT_DIR/utils/update-repos.sh"
             ;;
+        deps)
+            exec "$SCRIPT_DIR/utils/dependency-graph.sh" ascii
+            ;;
         clean)
             exec "$SCRIPT_DIR/build.sh" --clean
+            ;;
+        upgrade)
+            shift
+            # Use unified upgrade script
+            exec "$SCRIPT_DIR/core/upgrade-legacy-router.sh" "$@"
             ;;
         help|-h|--help)
             usage

@@ -1,383 +1,316 @@
 # Lime-Dev
 
-A development environment and build system for LibreMesh, LibreRouterOS, and related projects. Provides code analysis tools, environment verification, upstream contribution workflows, and build automation.
+A comprehensive development environment for LibreMesh ecosystem projects. Provides firmware build systems, QEMU-based development tools, legacy router support, and automated workflows for LibreMesh, LibreRouterOS, and lime-app development.
 
-## Overview
+## What is Lime-Dev?
 
-Lime-Dev includes:
-- LibreRouterOS firmware build system (native and Docker)
-- QEMU-based lime-app development environment
-- LibreMesh package management
-- Code analysis and quality checking tools
-- Environment verification scripts
-- Git workflow automation for upstream contributions
-- Cross-platform setup scripts
+Lime-Dev solves common LibreMesh development challenges:
 
-## Project Structure
+- **Firmware Building**: Native and Docker-based LibreRouterOS compilation
+- **LibreRouter v1 Support**: Upgrade utility for LibreRouter v1 devices (pre-1.5 firmware)
+- **lime-app Development**: Complete framework for LibreMesh web interface development with QEMU integration
+- **Cross-Platform Setup**: Automated environment configuration across Linux distributions
+- **Build Automation**: Consistent, reproducible firmware builds with proper dependency management
 
-```
-lime-dev/
-├── repos/                 # Managed source repositories
-│   ├── librerouteros/     # LibreRouterOS firmware (OpenWrt-based)
-│   ├── lime-app/          # LibreMesh web interface
-│   ├── lime-packages/     # LibreMesh package collection
-│   └── kconfig-utils/     # Kernel configuration utilities
-├── scripts/               # Core build and automation scripts
-│   ├── lime               # Main CLI interface
-│   ├── build.sh           # Build management
-│   ├── setup.sh           # Environment setup
-│   └── core/              # Core functionality scripts
-├── tools/                 # Development tools
-│   ├── ai/                # AI-powered analysis tools
-│   ├── verify/            # Environment verification
-│   ├── upstream/          # Upstream contribution tools
-│   └── qemu/              # QEMU management tools
-├── configs/               # Build configurations
-├── docs/                  # Documentation
-├── cache/                 # Build cache (git-ignored)
-└── logs/                  # Build logs (git-ignored)
-```
+## Key Features
+
+### 🔧 Firmware Development
+- LibreRouterOS build system with Docker support
+- Multiple target configurations (x86_64, LibreRouter v1, etc.)
+- Automated dependency management and toolchain setup
+- Cross-platform build support (Ubuntu, RHEL, Arch Linux)
+
+### 🖥️ QEMU Virtualization
+- Virtual LibreMesh routers for lime-app development
+- Network simulation with bridge interfaces
+- Support for both LibreMesh and LibreRouterOS images
+- Development workflow automation
+
+### 🔄 LibreRouter v1 Support
+- LibreRouter v1 upgrade utility for safe-upgrade and firmware updates
+- Enables web-based firmware upgrades on legacy devices
+- Handles SSH legacy algorithms and SCP/SFTP limitations
+- Automated backup and verification
+
+### 🛠️ Development Tools
+- Unified CLI interface (`./lime`) for all operations
+- Environment verification and troubleshooting
+- Code analysis and quality checking
+- Upstream contribution workflows
 
 ## Quick Start
 
-### Complete Setup
+### Complete Environment Setup
 
 ```bash
-# Clone this repository
+# Clone and setup
 git clone <your-lime-dev-repo>
 cd lime-dev
+./lime setup install
 
-# Set up complete development environment
-./scripts/lime setup install
-
-# Verify environment
-./scripts/lime verify all
-
-# Build firmware
-./scripts/lime build
+# Verify setup
+./lime verify all
 ```
 
-### Code Analysis
+### Build Firmware
 
 ```bash
-# Code review for all repositories
-./scripts/lime ai review --repo all
+# Build LibreRouterOS for x86_64
+./lime build configs/example_config_x86_64
 
-# Security scan
-./scripts/lime ai security --repo all
+# Build for LibreRouter hardware
+./lime build configs/example_config_librerouter
 
-# Documentation validation
-./scripts/lime ai docs --repo lime-app
+# Docker-based build
+./lime build docker librerouter-v1
+```
 
-# Quality assessment
-./scripts/lime ai quality --repo lime-packages --verbose
+### lime-app Development
+
+```bash
+# Start QEMU development environment
+./lime qemu start
+
+# Develop and deploy lime-app
+cd repos/lime-app
+npm install
+npm run dev              # Development server
+./dev.sh deploy          # Deploy to QEMU router
+
+# Test at: http://10.13.0.1/app/
 ```
 
 ### QEMU Development
 
 ```bash
-# Start QEMU mesh simulation
-./scripts/lime qemu start
+# Start virtual router
+./lime qemu start
 
-# Access lime-app at http://10.13.0.1/app/
-# Make changes, then:
+# Deploy lime-app changes (from repos/lime-app/)
+./lime qemu deploy
 
-# Stop QEMU environment
-./scripts/lime qemu stop
+# Access at http://10.13.0.1/app/
 ```
 
-### Upstream Contribution
+### LibreRouter v1 Upgrade Utility
 
 ```bash
-# Configure upstream remotes and git aliases
-./scripts/lime upstream setup all
+# Update safe-upgrade on LibreRouter v1 (pre-1.5 firmware)
+./lime upgrade thisnode.info
 
-# Show available git aliases
-./scripts/lime upstream aliases lime-app
+# Complete firmware upgrade
+./lime upgrade 10.13.0.1 firmware.bin
+
+# With custom password
+./lime upgrade 10.13.0.1 -p mypassword
+
+# After update, use web interface at http://thisnode.info
 ```
 
-## Main CLI Interface
+## Project Structure
 
-The `lime` command provides unified access to all functionality:
-
-### Build Commands
-```bash
-./scripts/lime build                     # Native build (fastest)
-./scripts/lime build docker              # Docker build (isolated)
-./scripts/lime build --clean             # Clean environment
+```
+lime-dev/
+├── scripts/               # Core automation scripts
+│   ├── lime              # Main CLI interface
+│   ├── build.sh          # Build management
+│   ├── setup.sh          # Environment setup
+│   ├── core/             # Core functionality
+│   │   └── upgrade-legacy-router.sh  # Legacy router support
+│   └── utils/            # Utility scripts
+│       └── transfer-legacy-hex.sh    # Hex file transfer
+├── repos/                # Managed source repositories
+│   ├── librerouteros/    # LibreRouterOS firmware source
+│   ├── lime-app/         # LibreMesh web interface
+│   ├── lime-packages/    # LibreMesh package collection
+│   └── kconfig-utils/    # Kernel configuration utilities
+├── configs/              # Build configurations
+│   ├── example_config_x86_64         # Virtual machine builds
+│   └── example_config_librerouter    # LibreRouter hardware
+├── docs/                 # Documentation
+│   ├── TROUBLESHOOTING.md           # Common issues and solutions
+│   ├── DEVELOPMENT.md               # Development workflows
+│   └── ARCHITECTURE.md              # System architecture
+├── cache/                # Build cache and temporary files
+└── logs/                 # Build logs and debugging output
 ```
 
-### Verification Commands
+## Common Workflows
+
+### Firmware Development
+
 ```bash
-./scripts/lime verify all                # Complete environment verification
-./scripts/lime verify platform           # Platform-specific checks
-./scripts/lime verify setup --quick      # Quick setup verification
+# Setup development environment
+./lime setup install
+
+# Edit packages in repos/lime-packages/
+# Edit firmware in repos/librerouteros/
+
+# Build and test
+./lime build configs/example_config_x86_64
+./lime qemu start
+
+# Clean build
+./lime clean
+./lime build configs/example_config_x86_64
 ```
 
-### Code Analysis Tools
+### lime-app Development
+
 ```bash
-./scripts/lime ai review --repo lime-app      # Code review
-./scripts/lime ai security --repo all         # Security scan
-./scripts/lime ai quality --repo all          # Quality assessment
-./scripts/lime ai docs --repo lime-packages   # Documentation check
-./scripts/lime ai test --repo lime-app        # Test validation
+# Start QEMU environment
+./lime qemu start
+
+# Edit code in repos/lime-app/src/
+# Deploy changes
+./lime qemu deploy
+
+# Access development instance
+curl http://10.13.0.1/app/
+
+# Stop when done
+./lime qemu stop
 ```
 
-### Environment Management
+### Legacy Router Management
+
 ```bash
-./scripts/lime setup install             # Complete setup
-./scripts/lime setup check               # Check status
-./scripts/lime update                    # Update repositories
-./scripts/lime clean                     # Clean artifacts
+# Check router connectivity
+ssh -oHostKeyAlgorithms=+ssh-rsa root@thisnode.info
+
+# Update safe-upgrade script
+./lime upgrade thisnode.info
+
+# Verify update
+ssh -oHostKeyAlgorithms=+ssh-rsa root@thisnode.info 'safe-upgrade show'
+
+# Upgrade firmware via web interface
+# Open: http://thisnode.info -> System -> Software -> Upload firmware
 ```
 
-## Code Analysis Features
+## System Requirements
 
-### Analysis Tools
-- **Code Review**: Code quality analysis with repository-specific checks
-- **Security Scanning**: Detection of hardcoded secrets and dangerous function usage
-- **Quality Assessment**: Code metrics, complexity analysis, maintainability scoring
-- **Documentation Validation**: README completeness and inline documentation coverage
-- **Test Coverage**: Test structure analysis and coverage estimation
+### Host System
+- **Linux**: Ubuntu 20.04+, RHEL 8+, Arch Linux (recommended)
+- **macOS**: Supported with limited QEMU performance
+- **Windows**: Via WSL2 (experimental)
 
-### Multi-Repository Support
-- Consistent analysis across lime-app, lime-packages, and librerouteros
-- Repository-type detection (Node.js, OpenWrt, Makefile projects)
-- Standardized reporting and output formatting
-- Batch operations across managed repositories
+### Hardware Requirements
+- **CPU**: x86_64 with virtualization support (for QEMU)
+- **Memory**: 4GB minimum, 8GB+ recommended
+- **Storage**: 20GB+ free space
+- **Network**: Internet connection for downloads
 
-## Platform Verification
+### Software Dependencies
+- Git
+- SSH client and sshpass
+- Docker (optional, for containerized builds)
+- QEMU (for development environment)
+- Standard build tools (automatically installed)
 
-### Cross-Platform Support
-- **Linux**: Full verification with distribution-specific package management
-- **macOS**: Homebrew integration and Xcode tools validation
-- **Windows/WSL**: WSL2 support with performance optimization recommendations
+## Advanced Configuration
 
-### Environment Validation
-- System requirements verification
-- Development tool availability
-- QEMU and virtualization support
-- Network configuration validation
-- Build tool compatibility
+### Build Customization
 
-## Upstream Contribution Management
-
-### Git Workflow Integration
-- Automatic upstream remote configuration
-- Pre-configured git aliases for contribution workflows
-- Branch management and synchronization helpers
-- Clean contribution preparation
-
-### Repository-Specific Configuration
-- Exclusion patterns for development-only files
-- Upstream readiness validation
-- Automated patch generation
-- Pre-commit hooks for contribution quality
-
-## Build System
-
-### Build Methods
-- **Native Build**: Direct execution with environment setup (fastest)
-- **Docker Build**: Containerized build using LibreRouterOS Dockerfile (isolated)
-
-### Supported Targets
-- LibreRouter v1 (ath79/QCA9558)
-- x86_64 (testing and virtualization)
-- TP-Link devices (various models)
-- Custom OpenWrt targets
-
-### Firmware Versions
-- LibreMesh 23.05.5 (stable)
-- LibreRouterOS 24.10.1 (development)
-- OpenWrt 24.10.1 base
-
-## QEMU Development Environment
-
-### Features
-- Automatic network bridge configuration
-- TAP interface management
-- Support for multiple firmware versions
-- Console access via screen
-- Live development workflow
-
-### Network Configuration
-- Bridge interface: lime_br0 (10.13.0.2/16)
-- QEMU guest IP: 10.13.0.1
-- TAP interfaces: lime_tap00_0, lime_tap00_1, lime_tap00_2
-
-## Requirements
-
-### System Requirements
-- Linux OS (Ubuntu/Debian recommended)
-- 8GB+ RAM (4GB minimum)
-- 20GB+ free disk space
-- Internet connection for setup
-
-### Optional Requirements
-- Docker for containerized builds
-- KVM support for QEMU acceleration
-- Node.js 18+ (auto-installed for lime-app development)
-
-### AI Tools Dependencies
-- ripgrep (rg) for fast text searching
-- jq for JSON processing
-- Python 3 for advanced analysis
-
-## Development Workflows
-
-### Feature Development
 ```bash
-# 1. Verify environment
-./scripts/lime verify all
+# Custom build jobs
+export JOBS=$(nproc)
+./lime build configs/example_config_x86_64
 
-# 2. Create feature branch
-cd repos/lime-app
-git feature-start my-new-feature
+# Custom download cache
+export DOWNLOAD_DIR=/path/to/cache
+./lime build configs/example_config_librerouter
 
-# 3. Develop with AI assistance
-./scripts/lime ai review --repo lime-app
-./scripts/lime ai test --repo lime-app
-
-# 4. Test in QEMU
-./scripts/lime qemu start
-
-# 5. Contribute upstream
-./scripts/lime upstream setup lime-app
-git create-patch
+# Verbose build output
+export V=s
+./lime build configs/example_config_x86_64
 ```
 
-### Quality Assurance
+### QEMU Networking
+
 ```bash
-# Complete quality check
-./scripts/lime ai quality --repo all --format json --output qa-report.json
+# Custom network configuration
+export LIME_BRIDGE_IP=10.13.0.2/16
+./lime qemu start
 
-# Security audit
-./scripts/lime ai security --repo all
-
-# Documentation review
-./scripts/lime ai docs --repo all
+# Reset network interfaces
+sudo ip link delete lime_br0 2>/dev/null || true
+./lime qemu start
 ```
 
-### Multi-Repository Development
-```bash
-# Setup all repositories for upstream
-./scripts/lime upstream setup all
+### Legacy Router Customization
 
-# Sync with upstream changes
-cd repos/lime-app && git upstream-sync
-cd ../lime-packages && git upstream-sync
-cd ../librerouteros && git upstream-sync
+```bash
+# Custom SSH password
+export ROUTER_PASSWORD=mypassword
+./lime upgrade 10.13.0.1
+
+# Custom transfer timeout
+export SSH_TIMEOUT=30
+./lime upgrade thisnode.info
+```
+
+## Troubleshooting
+
+Common issues and solutions are documented in [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
+
+### Quick Diagnostics
+
+```bash
+# Check environment
+./lime verify all
+
+# Check specific components
+./lime verify platform
+./lime verify qemu
+./lime verify repos
+
+# Reset environment
+./lime clean
+./lime update
+```
+
+### Getting Help
+
+```bash
+# Main help
+./lime --help
+
+# Command-specific help
+./lime build --help
+./lime qemu --help
+./lime upgrade --help
+
+# Verify setup
+./lime setup check
 ```
 
 ## Contributing
 
-Contributions welcome! The development workflow:
+This repository focuses on development infrastructure and tooling. For LibreMesh core development:
 
-1. **Setup**: `./scripts/lime setup install`
-2. **Verify**: `./scripts/lime verify all`
-3. **Develop**: Use AI tools for quality assurance
-4. **Test**: QEMU environment for integration testing
-5. **Contribute**: Upstream contribution tools
+- **LibreMesh packages**: [lime-packages repository](https://github.com/libremesh/lime-packages)
+- **Web interface**: [lime-app repository](https://github.com/libremesh/lime-app)
+- **Documentation**: [LibreMesh website](https://libremesh.org)
 
-See [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) for detailed guidelines.
+### Development Workflow
 
-## Troubleshooting
-
-### Environment Issues
-```bash
-# Complete verification
-./scripts/lime verify all
-
-# Platform-specific checks
-./scripts/lime verify platform --verbose
-
-# Check specific components
-./scripts/lime verify qemu
-```
-
-### Build Issues
-```bash
-# Clean and rebuild
-./scripts/lime clean
-./scripts/lime build
-
-# Docker build issues
-./scripts/lime build docker --shell
-```
-
-### QEMU Issues
-```bash
-# Check status
-./scripts/lime qemu status
-
-# Reset environment
-./scripts/lime qemu stop
-./scripts/lime qemu start
-```
-
-### AI Tools Issues
-```bash
-# Verify AI dependencies
-./scripts/lime verify all
-
-# Test individual tools
-./scripts/lime ai review --repo lime-app --verbose
-```
-
-## Advanced Usage
-
-### Custom Build Configurations
-```bash
-# Use specific configuration
-./scripts/lime build configs/my_custom_config
-```
-
-### AI Tool Customization
-```bash
-# Custom output formatting
-./scripts/lime ai quality --repo all --format markdown --output report.md
-
-# Batch analysis
-for repo in lime-app lime-packages librerouteros; do
-    ./scripts/lime ai security --repo $repo --output security-$repo.json
-done
-```
-
-### Upstream Workflow
-```bash
-# Show available aliases
-./scripts/lime upstream aliases lime-app
-
-# Example workflow
-cd repos/lime-app
-git feature-start new-feature
-# ... make changes ...
-git feature-sync
-git create-patch
-git upstream-sync
-```
-
-## Documentation
-
-- [Architecture Guide](docs/ARCHITECTURE.md)
-- [Development Guide](docs/DEVELOPMENT.md) 
-- [Troubleshooting Guide](docs/TROUBLESHOOTING.md)
-- [Script Consolidation](docs/SCRIPT_CONSOLIDATION.md)
-- [Contributing Guidelines](docs/CONTRIBUTING.md)
+1. Set up environment: `./lime setup install`
+2. Make changes in `repos/` subdirectories
+3. Test with QEMU: `./lime qemu start`
+4. Build firmware: `./lime build`
+5. Verify changes: `./lime verify all`
 
 ## License
 
-This development environment is licensed under GPL-3.0. Individual repositories maintain their own licenses:
+This project follows the licensing of its component repositories:
 - LibreRouterOS: GPL-2.0
-- lime-app: AGPL-3.0
-- lime-packages: AGPL-3.0
+- LibreMesh packages: GPL-3.0
+- lime-app: GPL-3.0
+- Development scripts: GPL-3.0
 
-## Links
+## Acknowledgments
 
-- [LibreMesh Project](https://libremesh.org)
-- [LibreRouter Hardware](https://librerouter.org)
-- [OpenWrt Project](https://openwrt.org)
-
----
-
-**Note**: This development environment consolidates tools and workflows for LibreMesh ecosystem development. For production firmware builds, refer to official LibreMesh project releases.
+- **LibreMesh Community**: For the mesh networking software stack
+- **LibreRouter Project**: For the open hardware platform
+- **OpenWrt Project**: For the underlying firmware framework

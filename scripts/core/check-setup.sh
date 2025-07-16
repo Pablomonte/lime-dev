@@ -7,7 +7,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-LIME_BUILD_DIR="$(dirname "$SCRIPT_DIR")"
+LIME_BUILD_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 CONFIG_FILE="$LIME_BUILD_DIR/configs/versions.conf"
 
 print_info() {
